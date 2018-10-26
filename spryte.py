@@ -57,7 +57,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.tool_palette = ToolPalette()
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
-        self.canvas = CanvasContainer(pixel_size=20, sprite_width=10, sprite_height=10)
+        self.canvas = CanvasContainer(pixel_size=30, sprite_width=10, sprite_height=10)
         self.layout.pack_start(self.canvas, True, True, 0)
 
         self.statusbar = Statusbar()

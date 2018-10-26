@@ -20,6 +20,7 @@ class DiscreteScale(Gtk.Scale):
         adjustment = self.get_adjustment()
         adjustment.set_lower(values[0])
         adjustment.set_upper(values[-1])
+        adjustment.set_value(self.__last_value)
 
         self.__changed_value_id = self.connect("change-value", self.__change_value)
 
@@ -27,8 +28,6 @@ class DiscreteScale(Gtk.Scale):
         value = self.__closest_value(value)
         if value == self.__last_value:
             return True
-
-        print(value)
 
         self.handler_block(self.__changed_value_id)
         self.emit("change-value", scroll_type, value)

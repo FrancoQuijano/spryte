@@ -74,6 +74,8 @@ class Canvas(Gtk.DrawingArea):
         self.sprite_height = sprite_height
 
         self.pixelmap = PixelMap(sprite_width, sprite_height)
+
+        # Información para pruebas:
         self.pixelmap.set_pixel_color(1, 1, (1, 0, 0))
         self.pixelmap.set_pixel_color(2, 2, (0, 1, 0))
         self.pixelmap.set_pixel_color(3, 3, (0, 0, 1))
@@ -85,6 +87,14 @@ class Canvas(Gtk.DrawingArea):
         self.pixelmap.set_pixel_color(9, 4, (0, 0, 1))
         self.pixelmap.set_pixel_color(10, 5, (0, 0, 0))
 
+        self.pixelmap.set_pixel_color(1, 2, (0, 1, 1))
+        self.pixelmap.set_pixel_color(2, 3, (1, 0, 1))
+        self.pixelmap.set_pixel_color(3, 4, (1, 1, 0))
+
+        self.pixelmap.set_pixel_color(1, 3, (0.5, 0.75, 1))
+        self.pixelmap.set_pixel_color(2, 4, (0.75, 0.5, 1))
+        self.pixelmap.set_pixel_color(1, 4, (0, 0.75, 0.5))
+
         self.resize()
 
         self.add_events(Gdk.EventMask.SCROLL_MASK)
@@ -94,28 +104,25 @@ class Canvas(Gtk.DrawingArea):
 
     def resize(self):
         factor = self.zoom / 100
-        width = (self.pixel_size * (self.sprite_width + 1)) * factor
-        height = (self.pixel_size * (self.sprite_height + 1)) * factor
+        width = self.pixel_size * self.sprite_width * factor
+        height = self.pixel_size * self.sprite_height * factor
         self.set_size_request(width, height)
 
         # No es necesario llamar self.redraw() a menos que
         # no se cambie el tamaño
 
     def _scroll_cb(self, canvas, event):
-        if event.state in [Gdk.ModifierType.SHIFT_MASK,
-                           Gdk.ModifierType.CONTROL_MASK]:
-            if event.state == Gdk.ModifierType.CONTROL_MASK:
-                # Elimino el modificador para que piense que el usuario
-                # hizo un scroll normal
-                event.state = 0
-
+        if event.state != Gdk.ModifierType.CONTROL_MASK:
+            # Elimino el modificador para que piense que el usuario
+            # hizo un scroll normal
+            event.state = 0
             return False
 
         if event.direction == Gdk.ScrollDirection.UP:
-            self.zoom += 2
+            self.zoom += 10
 
         else:
-            self.zoom -= 2
+            self.zoom -= 10
 
         self.resize()
         #self.redraw()
@@ -126,21 +133,23 @@ class Canvas(Gtk.DrawingArea):
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
         factor = self.zoom / 100
+        w = h = self.pixel_size * factor
+        margin = 1 if self.zoom >= 100 else 0
 
         self._draw_bg(ctx)
 
         for pixel in self.pixelmap:
-            x = (alloc.width / self.sprite_width * (pixel.x - 1))
-            y = (alloc.height / self.sprite_height * (pixel.y - 1))
+            x = (self.pixel_size * factor * (pixel.x - 1))
+            y = (self.pixel_size * factor * (pixel.y - 1))
 
             ctx.set_source_rgb(*pixel.color)
-            ctx.rectangle(x, y, self.pixel_size * factor, self.pixel_size * factor)
+            ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
     def _draw_bg(self, ctx):
-        size = 13
-        c1 = (0.5, 0.5, 0.5)
-        c2 = (0.8, 0.8, 0.8)
+        size = 13  # Esto es 100% arbitrario
+        c1 = (0.4, 0.4, 0.4)
+        c2 = (0.5, 0.5, 0.5)
 
         alloc = self.get_allocation()
 
