@@ -61,9 +61,13 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.layout.pack_start(self.canvas, True, True, 0)
 
         self.statusbar = Statusbar()
+        self.statusbar.connect("zoom-changed", self._zoom_changed_cb)
         self.box.pack_end(self.statusbar, False, False, 0)
 
         self.show_all()
+
+    def _zoom_changed_cb(self, statusbar, zoom):
+        self.canvas.set_zoom(zoom)
 
 
 if __name__ == "__main__":

@@ -98,6 +98,9 @@ class Canvas(Gtk.DrawingArea):
         height = (self.pixel_size * (self.sprite_height + 1)) * factor
         self.set_size_request(width, height)
 
+        # No es necesario llamar self.redraw() a menos que
+        # no se cambie el tamaño
+
     def _scroll_cb(self, canvas, event):
         if event.state in [Gdk.ModifierType.SHIFT_MASK,
                            Gdk.ModifierType.CONTROL_MASK]:
@@ -156,6 +159,10 @@ class Canvas(Gtk.DrawingArea):
     def redraw(self):
         GLib.idle_add(self.queue_draw)
 
+    def set_zoom(self, zoom):
+        self.zoom = zoom
+        self.resize()
+
 
 class CanvasContainer(Gtk.Box):
 
@@ -178,3 +185,6 @@ class CanvasContainer(Gtk.Box):
         self.pack_start(self.scroll, True, True, 0)
 
         self.scroll.add(box2)
+
+    def set_zoom(self, zoom):
+        self.canvas.set_zoom(zoom)
