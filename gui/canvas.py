@@ -66,38 +66,48 @@ class Canvas(Gtk.DrawingArea):
         self.zoom = zoom
         self.sprite_width = sprite_width
         self.sprite_height = sprite_height
-
+        self.selected_color = (0, 0, 0)
         self.pixelmap = PixelMap(sprite_width, sprite_height)
 
+        self._pressed_buttons = []
+
         # Información para pruebas:
-        self.pixelmap.set_pixel_color(1, 1, (1, 0, 0))
-        self.pixelmap.set_pixel_color(2, 2, (0, 1, 0))
-        self.pixelmap.set_pixel_color(3, 3, (0, 0, 1))
-        self.pixelmap.set_pixel_color(4, 4, (0, 0, 0))
-        self.pixelmap.set_pixel_color(5, 5, (1, 0, 0))
-        self.pixelmap.set_pixel_color(6, 1, (0, 0, 0))
-        self.pixelmap.set_pixel_color(7, 2, (1, 0, 0))
-        self.pixelmap.set_pixel_color(8, 3, (0, 1, 0))
-        self.pixelmap.set_pixel_color(9, 4, (0, 0, 1))
-        self.pixelmap.set_pixel_color(10, 5, (0, 0, 0))
+        pixels = [
+            (1, 1, (1, 0, 0)),
+            (2, 2, (0, 1, 0)),
+            (3, 3, (0, 0, 1)),
+            (4, 4, (0, 0, 0)),
+            (5, 5, (1, 0, 0)),
+            (6, 1, (0, 0, 0)),
+            (7, 2, (1, 0, 0)),
+            (8, 3, (0, 1, 0)),
+            (9, 4, (0, 0, 1)),
+            (10, 5, (0, 0, 0)),
 
-        self.pixelmap.set_pixel_color(1, 2, (0, 1, 1))
-        self.pixelmap.set_pixel_color(2, 3, (1, 0, 1))
-        self.pixelmap.set_pixel_color(3, 4, (1, 1, 0))
+            (1, 2, (0, 1, 1)),
+            (2, 3, (1, 0, 1)),
+            (3, 4, (1, 1, 0)),
 
-        self.pixelmap.set_pixel_color(1, 3, (0.5, 0.75, 1))
-        self.pixelmap.set_pixel_color(2, 4, (0.75, 0.5, 1))
-        self.pixelmap.set_pixel_color(1, 4, (0, 0.75, 0.5))
+            (1, 3, (0.5, 0.75, 1)),
+            (2, 4, (0.75, 0.5, 1)),
+            (1, 4, (0, 0.75, 0.5))
+        ]
+
+        for x, y, color in pixels:
+            self.pixelmap.set_pixel_color(x, y, color)
 
         self.resize()
 
         self.add_events(Gdk.EventMask.SCROLL_MASK |
+                        Gdk.EventMask.POINTER_MOTION_MASK |
                         Gdk.EventMask.BUTTON_PRESS_MASK |
                         Gdk.EventMask.BUTTON_RELEASE_MASK |
                         Gdk.EventMask.BUTTON_MOTION_MASK)
 
         self.connect("draw", self._draw_cb)
         self.connect("scroll-event", self._scroll_cb)
+        self.connect("motion-notify-event", self._button_motion_cb)
+        self.connect("button-press-event", self._button_press_cb)
         self.connect("button-release-event", self._button_release_cb)
 
     def resize(self):
@@ -128,10 +138,25 @@ class Canvas(Gtk.DrawingArea):
         # Me aseguro de que no se haga scroll ya que se está haciendo zoom
         return True
 
+    def _button_motion_cb(self, canvas, event):
+        #something, button = event.get_button()
+        if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
+            self.paint_absolute_coords(event.x, event.y)
+
+    def _button_press_cb(self, canvas, event):
+        button = event.get_button()[1]
+
+        if button not in self._pressed_buttons:
+            self._pressed_buttons.append(button)
+
+        if button == Gdk.BUTTON_PRIMARY:
+            self.paint_absolute_coords(event.x, event.y)
+
     def _button_release_cb(self, canvas, event):
-        x, y = self.get_relative_coords(event.x, event.y)
-        self.pixelmap.set_pixel_color(x, y, (0, 0, 0))
-        self.redraw()
+        button = event.get_button()[1]
+
+        if button in self._pressed_buttons:
+            self._pressed_buttons.remove(button)
 
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
@@ -179,6 +204,13 @@ class Canvas(Gtk.DrawingArea):
         factor = self.zoom / (100 * self.pixel_size)
         return int(x * factor) + 1, int(y * factor) + 1
 
+    def paint_pixel(self, x, y):
+        self.pixelmap.set_pixel_color(x, y, self.selected_color)
+        self.redraw()
+
+    def paint_absolute_coords(self, x, y):
+        x, y = self.get_relative_coords(x, y)
+        self.paint_pixel(x, y)
 
 class CanvasContainer(Gtk.Box):
 
