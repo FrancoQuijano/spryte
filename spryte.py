@@ -43,6 +43,8 @@ class SpryteWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
 
+        self.set_default_size(620, 480)
+
         self.headerbar = HeaderBar()
         self.set_titlebar(self.headerbar)
 
