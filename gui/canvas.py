@@ -4,6 +4,8 @@
 from __future__ import division
 from __future__ import print_function
 
+from .utils import Color
+
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GLib
@@ -11,7 +13,7 @@ from gi.repository import GLib
 
 class Pixel(object):
 
-    def __init__(self, x=0, y=0, color=(1, 1, 1)):
+    def __init__(self, x=0, y=0, color=(1, 1, 1, 1)):
         self.x = x
         self.y = y
         self.color = color
@@ -66,7 +68,8 @@ class Canvas(Gtk.DrawingArea):
         self.zoom = zoom
         self.sprite_width = sprite_width
         self.sprite_height = sprite_height
-        self.selected_color = (0, 0, 0)
+        self.primary_color = (0, 0, 0, 1)
+        self.secondary_color = (1, 1, 1, 0)
         self.pixelmap = PixelMap(sprite_width, sprite_height)
 
         self._pressed_buttons = []
@@ -74,24 +77,24 @@ class Canvas(Gtk.DrawingArea):
 
         # Información para pruebas:
         pixels = [
-            (1, 1, (1, 0, 0)),
-            (2, 2, (0, 1, 0)),
-            (3, 3, (0, 0, 1)),
-            (4, 4, (0, 0, 0)),
-            (5, 5, (1, 0, 0)),
-            (6, 1, (0, 0, 0)),
-            (7, 2, (1, 0, 0)),
-            (8, 3, (0, 1, 0)),
-            (9, 4, (0, 0, 1)),
-            (10, 5, (0, 0, 0)),
+            (1, 1, (1, 0, 0, 1)),
+            (2, 2, (0, 1, 0, 1)),
+            (3, 3, (0, 0, 1, 1)),
+            (4, 4, (0, 0, 0, 1)),
+            (5, 5, (1, 0, 0, 1)),
+            (6, 1, (0, 0, 0, 1)),
+            (7, 2, (1, 0, 0, 1)),
+            (8, 3, (0, 1, 0, 1)),
+            (9, 4, (0, 0, 1, 1)),
+            (10, 5, (0, 0, 0, 1)),
 
-            (1, 2, (0, 1, 1)),
-            (2, 3, (1, 0, 1)),
-            (3, 4, (1, 1, 0)),
+            (1, 2, (0, 1, 1, 1)),
+            (2, 3, (1, 0, 1, 1)),
+            (3, 4, (1, 1, 0, 1)),
 
-            (1, 3, (0.5, 0.75, 1)),
-            (2, 4, (0.75, 0.5, 1)),
-            (1, 4, (0, 0.75, 0.5))
+            (1, 3, (0.5, 0.75, 1, 1)),
+            (2, 4, (0.75, 0.5, 1, 1)),
+            (1, 4, (0, 0.75, 0.5, 1))
         ]
 
         for x, y, color in pixels:
@@ -143,7 +146,10 @@ class Canvas(Gtk.DrawingArea):
         self._mouse_position = (event.x, event.y)
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
-            self.paint_absolute_coords(*self._mouse_position)
+            self.paint_absolute_coords(*self._mouse_position, color=Color.PRIMARY)
+
+        elif Gdk.BUTTON_SECONDARY in self._pressed_buttons:
+            self.paint_absolute_coords(*self._mouse_position, color=Color.SECONDARY)
 
         self.redraw()
 
@@ -173,7 +179,7 @@ class Canvas(Gtk.DrawingArea):
         for pixel in self.pixelmap.pixels:
             x, y = self.get_absolute_coords(pixel.x, pixel.y)
 
-            ctx.set_source_rgb(*pixel.color)
+            ctx.set_source_rgba(*pixel.color)
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
@@ -202,7 +208,7 @@ class Canvas(Gtk.DrawingArea):
         # Por ahora la única herramienta es el pincel de tamaño 1
         x, y = self.get_relative_coords(*self._mouse_position)
         x, y = self.get_absolute_coords(x, y)
-        ctx.set_source_rgba(1, 1, 1, .2)
+        ctx.set_source_rgba(1, 1, 1, 0.2)
 
         factor = self.zoom / 100
         w = h = self.pixel_size * factor
@@ -225,13 +231,26 @@ class Canvas(Gtk.DrawingArea):
         factor = self.pixel_size * self.zoom / 100
         return factor * (x - 1), factor * (y - 1)
 
-    def paint_pixel(self, x, y):
-        self.pixelmap.set_pixel_color(x, y, self.selected_color)
+    def paint_pixel(self, x, y, color=Color.PRIMARY):
+        cairo_color = (0, 0, 0, 1)
+        if color == Color.PRIMARY:
+            cairo_color = self.primary_color
+
+        elif color == Color.SECONDARY:
+            cairo_color = self.secondary_color
+
+        self.pixelmap.set_pixel_color(x, y, cairo_color)
         self.redraw()
 
-    def paint_absolute_coords(self, x, y):
+    def paint_absolute_coords(self, x, y, color=Color.PRIMARY):
         x, y = self.get_relative_coords(x, y)
-        self.paint_pixel(x, y)
+        self.paint_pixel(x, y, color)
+
+    def set_primary_color(self, color):
+        self.primary_color = color
+
+    def set_secondary_color(self, color):
+        self.secondary_color = color
 
 
 class CanvasContainer(Gtk.Box):
@@ -258,3 +277,9 @@ class CanvasContainer(Gtk.Box):
 
     def set_zoom(self, zoom):
         self.canvas.set_zoom(zoom)
+
+    def set_primary_color(self, color):
+        self.canvas.set_primary_color(color)
+
+    def set_secondary_color(self, color):
+        self.canvas.set_secondary_color(color)

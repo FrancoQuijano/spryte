@@ -57,6 +57,8 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.box.pack_start(self.layout, True, True, 0)
 
         self.tool_palette = ToolPalette()
+        self.tool_palette.connect("primary-color-changed", self._primary_color_changed_cb)
+        self.tool_palette.connect("secondary-color-changed", self._secondary_color_changed_cb)
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
         self.canvas = CanvasContainer(pixel_size=30, sprite_width=10, sprite_height=10)
@@ -67,6 +69,12 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.box.pack_end(self.statusbar, False, False, 0)
 
         self.show_all()
+
+    def _primary_color_changed_cb(self, palette, color):
+        self.canvas.set_primary_color(color)
+
+    def _secondary_color_changed_cb(self, palette, color):
+        self.canvas.set_secondary_color(color)
 
     def _zoom_changed_cb(self, statusbar, zoom):
         self.canvas.set_zoom(zoom)

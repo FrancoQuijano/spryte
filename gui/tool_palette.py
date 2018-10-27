@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from .utils import Color
+
 from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
 
 
 class Tool(object):
@@ -14,6 +18,11 @@ class Tool(object):
 
 
 class ToolPalette(Gtk.Grid):
+
+    __gsignals__ = {
+        "primary-color-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "secondary-color-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT])
+    }
 
     def __init__(self):
         super(ToolPalette, self).__init__()
@@ -40,6 +49,7 @@ class ToolPalette(Gtk.Grid):
         ]
 
         self._create_tools_buttons()
+        self._create_color_buttons()
 
     def _create_tools_buttons(self):
         _button = None
@@ -61,3 +71,36 @@ class ToolPalette(Gtk.Grid):
 
             tool.button = button
             _button = button
+
+    def _create_color_buttons(self):
+        btn1 = Gtk.ColorButton()
+        btn1.set_use_alpha(True)
+        btn1.connect("color-set", self._primary_color_changed)
+        self.attach(btn1, 0, 8, 1, 1)
+
+        color = Gdk.RGBA()
+        color.red = 0
+        color.green = 0
+        color.blue = 0
+        color.alpha = 1
+        btn1.set_rgba(color)
+
+        btn2 = Gtk.ColorButton()
+        btn2.set_use_alpha(True)
+        btn2.connect("color-set", self._secondary_color_changed)
+        self.attach(btn2, 1, 8, 1, 1)
+
+        color = Gdk.RGBA()
+        color.red = 1
+        color.green = 1
+        color.blue = 1
+        color.alpha = 1.0
+        btn2.set_rgba(color)
+
+    def _primary_color_changed(self, btn):
+        color = Color.gdk_to_cairo(btn.get_color(), btn.get_alpha())
+        self.emit("primary-color-changed", color)
+
+    def _secondary_color_changed(self, btn):
+        color = Color.gdk_to_cairo(btn.get_color(), btn.get_alpha())
+        self.emit("secondary-color-changed", color)
