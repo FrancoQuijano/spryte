@@ -24,29 +24,23 @@ class PixelMap(object):
         self.height = height
 
         self.__index = 0
+        self.__reset = False
         self.pixels = []
 
     def __iter__(self):
         return self
 
-    def __next__(self):
-        if self.__index >= len(self.pixels):
-            self.__index = 0
-            raise StopIteration
-
-        self.__index += 1
-        return self.pixels[self.__index - 1]
-
     def __contains__(self, obj):
-        for pixel in self:
+        for pixel in self.pixels:
             if pixel.x == obj[0] and pixel.y == obj[1]:
                 return True
 
         return False
 
     def get_pixel_at(self, x, y):
-        for pixel in self:
+        for pixel in self.pixels:
             if pixel.x == x and pixel.y == y:
+                self.__reset = True
                 return pixel
 
         return None
@@ -97,10 +91,14 @@ class Canvas(Gtk.DrawingArea):
 
         self.resize()
 
-        self.add_events(Gdk.EventMask.SCROLL_MASK)
+        self.add_events(Gdk.EventMask.SCROLL_MASK |
+                        Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.BUTTON_RELEASE_MASK |
+                        Gdk.EventMask.BUTTON_MOTION_MASK)
 
         self.connect("draw", self._draw_cb)
         self.connect("scroll-event", self._scroll_cb)
+        self.connect("button-release-event", self._button_release_cb)
 
     def resize(self):
         factor = self.zoom / 100
@@ -130,6 +128,11 @@ class Canvas(Gtk.DrawingArea):
         # Me aseguro de que no se haga scroll ya que se está haciendo zoom
         return True
 
+    def _button_release_cb(self, canvas, event):
+        x, y = self.get_relative_coords(event.x, event.y)
+        self.pixelmap.set_pixel_color(x, y, (0, 0, 0))
+        self.redraw()
+
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
         factor = self.zoom / 100
@@ -138,7 +141,7 @@ class Canvas(Gtk.DrawingArea):
 
         self._draw_bg(ctx)
 
-        for pixel in self.pixelmap:
+        for pixel in self.pixelmap.pixels:
             x = (self.pixel_size * factor * (pixel.x - 1))
             y = (self.pixel_size * factor * (pixel.y - 1))
 
@@ -171,6 +174,10 @@ class Canvas(Gtk.DrawingArea):
     def set_zoom(self, zoom):
         self.zoom = zoom
         self.resize()
+
+    def get_relative_coords(self, x, y):
+        factor = self.zoom / (100 * self.pixel_size)
+        return int(x * factor) + 1, int(y * factor) + 1
 
 
 class CanvasContainer(Gtk.Box):
