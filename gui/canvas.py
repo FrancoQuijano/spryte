@@ -42,19 +42,29 @@ class PixelMap(object):
     def get_pixel_at(self, x, y):
         for pixel in self.pixels:
             if pixel.x == x and pixel.y == y:
-                self.__reset = True
                 return pixel
 
         return None
 
     def set_pixel_color(self, x, y, color):
         pixel = self.get_pixel_at(x, y)
-        if pixel is None:
+        if pixel is None and color[Color.ALPHA] != 0:
             pixel = Pixel(x, y, color)
             self.pixels.append(pixel)
 
-        else:
+        elif color[Color.ALPHA] != 0:
             pixel.color = color
+
+        elif color[Color.ALPHA] == 0:
+            self.delete_pixel_at(x, y)
+
+    def delete_pixel_at(self, x, y):
+        i = 0
+        for pixel in self.pixels:
+            if pixel.x == x and pixel.y == y:
+                del self.pixels[i]
+
+            i += 1
 
 
 class Canvas(Gtk.DrawingArea):

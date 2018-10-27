@@ -9,6 +9,11 @@ class Color:
     PRIMARY = 1
     SECONDARY = 2
 
+    RED = 0
+    GREEN = 1
+    BLUE = 2
+    ALPHA = 3
+
     @classmethod
     def gdk_to_cairo(self, color, alpha=65535):
         return (color.red / 65535,

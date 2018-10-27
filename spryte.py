@@ -61,7 +61,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.tool_palette.connect("secondary-color-changed", self._secondary_color_changed_cb)
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
-        self.canvas = CanvasContainer(pixel_size=30, sprite_width=10, sprite_height=10)
+        self.canvas = CanvasContainer(pixel_size=20, sprite_width=32, sprite_height=32)
         self.layout.pack_start(self.canvas, True, True, 0)
 
         self.statusbar = Statusbar()
