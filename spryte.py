@@ -15,6 +15,7 @@ from gui import ToolPalette
 from gui import HeaderBar
 from gui import CanvasContainer
 from gui import Statusbar
+from gui import CanvasesNotebook
 
 
 class SpryteApp(Gtk.Application):
@@ -99,10 +100,17 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.tool_palette.connect("secondary-color-changed", self._secondary_color_changed_cb)
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
+        self.canvases_notebook = CanvasesNotebook()
+        self.canvases_notebook.append_page()
+        self.canvases_notebook.append_page()
+        self.layout.pack_start(self.canvases_notebook, True, True, 0)
+
+        """
         self.canvas = CanvasContainer(pixel_size=20, sprite_width=32, sprite_height=32)
         self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
         self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
         self.layout.pack_start(self.canvas, True, True, 0)
+        """
 
         self.statusbar = Statusbar()
         self.statusbar.connect("zoom-changed", self._zoom_changed_cb)
@@ -111,27 +119,27 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.show_all()
 
     def _tool_size_changed_cb(self, headerbar, size):
-        self.canvas.set_tool_size(size)
+        self.canvases_notebook.set_tool_size(size)
 
     def _tool_changed_cb(self, palette, tool):
-        self.canvas.set_tool(tool)
+        self.canvases_notebook.set_tool(tool)
 
     def _primary_color_changed_cb(self, palette, color):
-        self.canvas.set_primary_color(color)
+        self.canvases_notebook.set_primary_color(color)
 
     def _secondary_color_changed_cb(self, palette, color):
-        self.canvas.set_secondary_color(color)
+        self.canvases_notebook.set_secondary_color(color)
 
     def _zoom_changed_cb(self, statusbar, zoom):
-        self.canvas.set_zoom(zoom)
+        self.canvases_notebook.set_zoom(zoom)
 
     def _primary_color_picked_cb(self, canvas, color):
         self.tool_palette.set_primary_color(color)
-        self.canvas.set_primary_color(color)
+        self.canvases_notebook.set_primary_color(color)
 
     def _secondary_color_picked_cb(self, canvas, color):
         self.tool_palette.set_secondary_color(color)
-        self.canvas.set_secondary_color(color)
+        self.canvases_notebook.set_secondary_color(color)
 
     def new_file(self):
         print("TOOD: SpryteWindow.new_file")

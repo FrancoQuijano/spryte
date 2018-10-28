@@ -81,10 +81,11 @@ class Canvas(Gtk.DrawingArea):
     __gsignals__ = {
         "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
         "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "changed": (GObject.SIGNAL_RUN_LAST, None, []),
     }
 
     def __init__(self, pixel_size=5, zoom=100, sprite_width=48,
-                 sprite_height=48):
+                 sprite_height=48, editable=True):
         super(Canvas, self).__init__()
 
         self.editable = True
@@ -93,12 +94,13 @@ class Canvas(Gtk.DrawingArea):
         self.zoom = zoom
         self.sprite_width = sprite_width
         self.sprite_height = sprite_height
+        self.editable = editable
         self.tool = ToolType.PEN
-        self._pending_tool = None
         self.primary_color = (0, 0, 0, 1)
         self.secondary_color = (1, 1, 1, 0)
         self.pixelmap = PixelMap(sprite_width, sprite_height)
 
+        self._pending_tool = None
         self._pressed_buttons = []
         self._mouse_position = (-1, -1)
 
@@ -129,17 +131,19 @@ class Canvas(Gtk.DrawingArea):
 
         self.resize()
 
-        self.add_events(Gdk.EventMask.SCROLL_MASK |
-                        Gdk.EventMask.POINTER_MOTION_MASK |
-                        Gdk.EventMask.BUTTON_PRESS_MASK |
-                        Gdk.EventMask.BUTTON_RELEASE_MASK |
-                        Gdk.EventMask.BUTTON_MOTION_MASK)
+        if self.editable:
+            self.add_events(Gdk.EventMask.SCROLL_MASK |
+                            Gdk.EventMask.POINTER_MOTION_MASK |
+                            Gdk.EventMask.BUTTON_PRESS_MASK |
+                            Gdk.EventMask.BUTTON_RELEASE_MASK |
+                            Gdk.EventMask.BUTTON_MOTION_MASK)
+
+            self.connect("scroll-event", self._scroll_cb)
+            self.connect("motion-notify-event", self._button_motion_cb)
+            self.connect("button-press-event", self._button_press_cb)
+            self.connect("button-release-event", self._button_release_cb)
 
         self.connect("draw", self._draw_cb)
-        self.connect("scroll-event", self._scroll_cb)
-        self.connect("motion-notify-event", self._button_motion_cb)
-        self.connect("button-press-event", self._button_press_cb)
-        self.connect("button-release-event", self._button_release_cb)
 
     def resize(self):
         factor = self.zoom / 100
@@ -202,11 +206,13 @@ class Canvas(Gtk.DrawingArea):
             self.tool = self._pending_tool
             self.redraw()
 
+        self.emit("changed")
+
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
         factor = self.zoom / 100
         w = h = self.pixel_size * factor
-        margin = 1 if self.zoom >= 100 else 0
+        margin = 1 if self.zoom >= 100 and self.editable else 0
 
         self._draw_bg(ctx)
 
@@ -381,16 +387,24 @@ class Canvas(Gtk.DrawingArea):
 
         return pixels
 
+    def get_pixelmap(self):
+        return self.pixelmap
+
+    def set_pixelmap(self, pixelmap):
+        self.pixelmap = pixelmap
+        self.redraw()
+
 
 class CanvasContainer(Gtk.Box):
 
     __gsignals__ = {
         "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
         "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "changed": (GObject.SIGNAL_RUN_LAST, None, []),
     }
 
     def __init__(self, pixel_size=25, zoom=100, sprite_width=48,
-                 sprite_height=48):
+                 sprite_height=48, editable=True):
         super(CanvasContainer, self).__init__()
 
         self.set_border_width(5)
@@ -406,10 +420,14 @@ class CanvasContainer(Gtk.Box):
         box2.set_orientation(Gtk.Orientation.VERTICAL)
         box1.pack_start(box2, True, False, 0)
 
-        self.canvas = Canvas(pixel_size, zoom, sprite_width, sprite_height)
+        self.canvas = Canvas(pixel_size, zoom, sprite_width, sprite_height, editable)
+        self.canvas.connect("changed", self._changed_cb)
         self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
         self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
         box2.pack_start(self.canvas, True, False, 0)
+
+    def _changed_cb(self, canvas):
+        self.emit("changed")
 
     def _primary_color_picked_cb(self, canvas, color):
         self.emit("primary-color-picked", color)
@@ -431,3 +449,9 @@ class CanvasContainer(Gtk.Box):
 
     def set_secondary_color(self, color):
         self.canvas.set_secondary_color(color)
+
+    def get_pixelmap(self):
+        return self.canvas.get_pixelmap()
+
+    def set_pixelmap(self, pixelmap):
+        self.canvas.set_pixels(pixelmap)
