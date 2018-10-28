@@ -132,6 +132,9 @@ class CanvasesNotebook(Gtk.Notebook):
         idx = self.get_children().index(tab._associated)
 
         if idx < self.get_n_pages() - 1:
+            if idx == self.get_n_pages() - 2:
+                self.set_current_page(self.get_n_pages() - 3)
+
             self.remove_page(idx)
             del self.canvases[tab._associated]
 
