@@ -279,25 +279,49 @@ class Canvas(Gtk.DrawingArea):
         pixels = [(x, y)]
 
         if self.tool_size >= 2:
-            pixels.extend([(x + 1, y + 1),
-                           (x, y + 1),
-                           (x + 1, y)])
+            # La X es donde está el mouse
+            # ---------
+            # | X | 1 |
+            # |---|---|
+            # | 3 | 2 |
+            # ---------
+            pixels.extend([(x + 1, y),      # 1
+                           (x + 1, y + 1),  # 2
+                           (x, y + 1)])     # 3
 
         if self.tool_size >= 3:
-            pixels.extend([(x - 1, y - 1),
-                           (x, y - 1),
-                           (x - 1, y),
-                           (x - 1, y + 1),
-                           (x + 1, y - 1)])
+            # La X es donde está el mouse
+            # -------------
+            # | 4 | 5 | 6 |
+            # |---|---|---|
+            # | 7 | X | 1 |
+            # |---|---|---|
+            # | 8 | 2 | 3 |
+            # .............
+            pixels.extend([(x - 1, y - 1),   # 4
+                           (x, y - 1),       # 5
+                           (x + 1, y - 1),   # 6
+                           (x - 1, y),       # 7
+                           (x - 1, y + 1)])  # 8
 
         if self.tool_size == 4:
-            pixels.extend([(x + 2, y - 1),
-                           (x + 2, y),
-                           (x + 2, y + 1),
-                           (x + 2, y + 2),
-                           (x - 1, y + 2),
-                           (x, y + 2),
-                           (x + 1, y + 2)])
+            # La X es donde está el mouse
+            # -----------------
+            # | 4 | 5 | 6 | 9 |
+            # |---|---|---|---|
+            # | 7 | X | 1 | 10|
+            # |---|---|---|---|
+            # | 8 | 2 | 3 | 11|
+            # |---|---|---|---|
+            # | 12| 13| 14| 15|
+            # -----------------
+            pixels.extend([(x + 2, y - 1),   # 9
+                           (x + 2, y),       # 10
+                           (x + 2, y + 1),   # 11
+                           (x - 1, y + 2),   # 12
+                           (x, y + 2),       # 13
+                           (x + 1, y + 2),   # 14
+                           (x + 2, y + 2)])  # 15
 
         return pixels
 
