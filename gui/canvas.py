@@ -75,6 +75,7 @@ class Canvas(Gtk.DrawingArea):
 
         self.editable = True
         self.pixel_size = pixel_size
+        self.tool_size = 1
         self.zoom = zoom
         self.sprite_width = sprite_width
         self.sprite_height = sprite_height
@@ -156,10 +157,10 @@ class Canvas(Gtk.DrawingArea):
         self._mouse_position = (event.x, event.y)
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
-            self.paint_absolute_coords(*self._mouse_position, color=Color.PRIMARY)
+            self.paint_selected_pixels(color=Color.PRIMARY)
 
         elif Gdk.BUTTON_SECONDARY in self._pressed_buttons:
-            self.paint_absolute_coords(*self._mouse_position, color=Color.SECONDARY)
+            self.paint_selected_pixels(color=Color.SECONDARY)
 
         self.redraw()
 
@@ -170,7 +171,10 @@ class Canvas(Gtk.DrawingArea):
             self._pressed_buttons.append(button)
 
         if button == Gdk.BUTTON_PRIMARY:
-            self.paint_absolute_coords(event.x, event.y)
+            self.paint_selected_pixels(color=Color.PRIMARY)
+
+        elif button == Gdk.BUTTON_SECONDARY:
+            self.paint_selected_pixels(color=Color.SECONDARY)
 
     def _button_release_cb(self, canvas, event):
         button = event.get_button()[1]
@@ -216,18 +220,22 @@ class Canvas(Gtk.DrawingArea):
 
     def _draw_selected_pixels(self, ctx):
         # Por ahora la única herramienta es el pincel de tamaño 1
-        x, y = self.get_relative_coords(*self._mouse_position)
-        x, y = self.get_absolute_coords(x, y)
         ctx.set_source_rgba(1, 1, 1, 0.2)
 
-        factor = self.zoom / 100
-        w = h = self.pixel_size * factor
-        margin = 1 if self.zoom >= 100 else 0
-        ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
-        ctx.fill()
+        for x, y in self.get_selected_pixels():
+            x, y = self.get_absolute_coords(x, y)
+            factor = self.zoom / 100
+            w = h = self.pixel_size * factor
+            margin = 1 if self.zoom >= 100 else 0
+            ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
+            ctx.fill()
 
     def redraw(self):
         GLib.idle_add(self.queue_draw)
+
+    def set_tool_size(self, size):
+        self.tool_size = size
+        self.redraw()
 
     def set_zoom(self, zoom):
         self.zoom = zoom
@@ -256,11 +264,42 @@ class Canvas(Gtk.DrawingArea):
         x, y = self.get_relative_coords(x, y)
         self.paint_pixel(x, y, color)
 
+    def paint_selected_pixels(self, color=Color.PRIMARY):
+        for x, y in self.get_selected_pixels():
+            self.paint_pixel(x, y, color)
+
     def set_primary_color(self, color):
         self.primary_color = color
 
     def set_secondary_color(self, color):
         self.secondary_color = color
+
+    def get_selected_pixels(self):
+        x, y = self.get_relative_coords(*self._mouse_position)
+        pixels = [(x, y)]
+
+        if self.tool_size >= 2:
+            pixels.extend([(x + 1, y + 1),
+                           (x, y + 1),
+                           (x + 1, y)])
+
+        if self.tool_size >= 3:
+            pixels.extend([(x - 1, y - 1),
+                           (x, y - 1),
+                           (x - 1, y),
+                           (x - 1, y + 1),
+                           (x + 1, y - 1)])
+
+        if self.tool_size == 4:
+            pixels.extend([(x + 2, y - 1),
+                           (x + 2, y),
+                           (x + 2, y + 1),
+                           (x + 2, y + 2),
+                           (x - 1, y + 2),
+                           (x, y + 2),
+                           (x + 1, y + 2)])
+
+        return pixels
 
 
 class CanvasContainer(Gtk.Box):
@@ -284,6 +323,9 @@ class CanvasContainer(Gtk.Box):
         self.pack_start(self.scroll, True, True, 0)
 
         self.scroll.add(box2)
+
+    def set_tool_size(self, size):
+        self.canvas.set_tool_size(size)
 
     def set_zoom(self, zoom):
         self.canvas.set_zoom(zoom)

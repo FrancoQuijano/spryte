@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from gi.repository import Gtk
+from gi.repository import GObject
 
 
 class HeaderBar(Gtk.HeaderBar):
+
+    __gsignals__ = {
+        "tool-size-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_INT]),
+    }
 
     def __init__(self):
         super(HeaderBar, self).__init__()
@@ -23,9 +28,12 @@ class HeaderBar(Gtk.HeaderBar):
                 _button, "_%d" % x)
 
             button.set_mode(False)
-            # button.connect("toggled", self._on_tool_size_changed, x)
+            button.connect("toggled", self._tool_size_changed, x)
             hbox.pack_start(button, False, False, 0)
 
             _button = button
 
         self.pack_start(hbox)
+
+    def _tool_size_changed(self, button, size):
+        self.emit("tool-size-changed", size)

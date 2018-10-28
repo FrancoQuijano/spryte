@@ -46,6 +46,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.set_default_size(620, 480)
 
         self.headerbar = HeaderBar()
+        self.headerbar.connect("tool-size-changed", self._tool_size_changed_cb)
         self.set_titlebar(self.headerbar)
 
         self.box = Gtk.Box()
@@ -69,6 +70,9 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.box.pack_end(self.statusbar, False, False, 0)
 
         self.show_all()
+
+    def _tool_size_changed_cb(self, headerbar, size):
+        self.canvas.set_tool_size(size)
 
     def _primary_color_changed_cb(self, palette, color):
         self.canvas.set_primary_color(color)
