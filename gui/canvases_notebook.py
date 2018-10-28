@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from .utils import Color
 from .canvas import Canvas
 from .canvas import CanvasContainer
 
@@ -47,11 +48,23 @@ class CanvasNotebookTab(Gtk.Box):
         overlay_box.set_orientation(Gtk.Orientation.VERTICAL)
         self.overlay.add_overlay(overlay_box)
 
+        hbox = Gtk.Box()
+        hbox.set_orientation(Gtk.Orientation.HORIZONTAL)
+        overlay_box.pack_start(hbox, True, True, 0)
+
+        self.index_label = Gtk.Label()
+        self.index_label.set_valign(Gtk.Align.START)
+        self.index_label.set_margin_bottom(4)
+        self.index_label.set_margin_start(4)
+        self.index_label.set_margin_end(4)
+        self.index_label.set_margin_top(4)
+        hbox.pack_start(self.index_label, False, False, 0)
+
         self.top_revealer = Gtk.Revealer()
         self.top_revealer.set_halign(Gtk.Align.END)
         self.top_revealer.set_valign(Gtk.Align.START)
         self.top_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
-        overlay_box.pack_start(self.top_revealer, True, True, 0)
+        hbox.pack_start(self.top_revealer, True, True, 0)
 
         delete_button = Gtk.Button.new_from_icon_name("window-close-symbolic", Gtk.IconSize.MENU)
         delete_button.connect("enter-notify-event", self._enter_cb)
@@ -84,6 +97,9 @@ class CanvasNotebookTab(Gtk.Box):
 
     def get_canvas(self):
         return self.canvas
+
+    def set_index(self, index):
+        self.index_label.set_label(str(index))
 
 
 class CanvasesNotebook(Gtk.Notebook):
@@ -122,11 +138,19 @@ class CanvasesNotebook(Gtk.Notebook):
             tab._associated.destroy()
             tab.destroy()
 
+        idx = 1
+        for child in self.get_children():
+            tab = self.get_tab_label(child)
+            tab.set_index(idx)
+
+            idx += 1
+
     def append_page(self):
         canvas = CanvasContainer(sprite_width=32, sprite_height=32)
         canvas.connect("changed", self._canvas_changed_cb)
 
         tab = CanvasNotebookTab(canvas)
+        tab.set_index(self.get_n_pages() + 1)
         tab.connect("delete", self._delete_tab_cb)
 
         self.canvases[canvas] = tab

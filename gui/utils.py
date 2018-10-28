@@ -27,6 +27,11 @@ class Color:
     def cairo_to_gdk(self, color):
         return Gdk.Color.from_floats(*(color[:3]))
 
+    @classmethod
+    def RGBA_from_values(self, color):
+        rgba = Gdk.RGBA()
+        rgba.red, rgba.blue, rgba.green, rgba.alpha = color
+
 
 class ToolType:
     PEN = 0
