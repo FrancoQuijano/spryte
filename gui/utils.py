@@ -3,6 +3,9 @@
 
 from __future__ import division
 
+import os
+
+from gi.repository import Gtk
 from gi.repository import Gdk
 
 
@@ -31,6 +34,15 @@ class Color:
     def RGBA_from_values(self, color):
         rgba = Gdk.RGBA()
         rgba.red, rgba.blue, rgba.green, rgba.alpha = color
+
+    @classmethod
+    def rgba_to_cairo(self, color):
+        return (
+            color[0] / 255,
+            color[1] / 255,
+            color[2] / 255,
+            color[3] / 255
+        )
 
 
 class ToolType:
@@ -76,3 +88,27 @@ class ToolType:
             self.LIGHTEN,
             self.DITHERING
         ]
+
+
+class FileChooserManager:
+
+    @classmethod
+    def open(self, window, path=None):
+        if path is None:
+            path = os.path.expanduser("~")
+
+        dialog = Gtk.FileChooserDialog("Please choose a file", window,
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        dialog.set_select_multiple(True)
+        # self.add_filters(dialog)
+
+        response = dialog.run()
+        files = []
+        if response == Gtk.ResponseType.OK:
+            files = dialog.get_filenames()
+
+        dialog.destroy()
+        return files

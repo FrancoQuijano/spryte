@@ -41,6 +41,7 @@ class CanvasNotebookTab(Gtk.Box):
                              sprite_height=self._associated.canvas.sprite_height,
                              editable=False)
 
+        self.canvas.set_resizable(False)
         self.overlay.add(self.canvas)
 
         overlay_box = Gtk.Box()
@@ -128,6 +129,10 @@ class CanvasesNotebook(Gtk.Notebook):
         tab_canvas = self.canvases[canvas].get_canvas()
         tab_canvas.set_pixelmap(canvas.get_pixelmap())
 
+    def _canvas_size_changed_cb(self, canvas):
+        tab_canvas = self.canvases[canvas].get_canvas()
+        tab_canvas.set_sprite_size(*canvas.get_sprite_size())
+
     def _delete_tab_cb(self, tab):
         idx = self.get_children().index(tab._associated)
 
@@ -151,6 +156,7 @@ class CanvasesNotebook(Gtk.Notebook):
     def append_page(self):
         canvas = CanvasContainer(sprite_width=32, sprite_height=32)
         canvas.connect("changed", self._canvas_changed_cb)
+        canvas.connect("size-changed", self._canvas_size_changed_cb)
 
         tab = CanvasNotebookTab(canvas)
         tab.set_index(self.get_n_pages() + 1)
@@ -181,3 +187,11 @@ class CanvasesNotebook(Gtk.Notebook):
     def set_zoom(self, zoom):
         for canvas in self.canvases.keys():
             canvas.set_zoom(zoom)
+
+    def open_file(self, file):
+        current_canvas = self.get_children()[self.get_current_page()]
+
+        if current_canvas.modified:
+            self.append_page()
+
+        current_canvas.set_file(file)

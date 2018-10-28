@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 
 import gi
@@ -16,6 +17,7 @@ from gui import HeaderBar
 from gui import CanvasContainer
 from gui import Statusbar
 from gui import CanvasesNotebook
+from gui.utils import FileChooserManager
 
 
 class SpryteApp(Gtk.Application):
@@ -105,13 +107,6 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.canvases_notebook.append_page()
         self.layout.pack_start(self.canvases_notebook, True, True, 0)
 
-        """
-        self.canvas = CanvasContainer(pixel_size=20, sprite_width=32, sprite_height=32)
-        self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
-        self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
-        self.layout.pack_start(self.canvas, True, True, 0)
-        """
-
         self.statusbar = Statusbar()
         self.statusbar.connect("zoom-changed", self._zoom_changed_cb)
         self.box.pack_end(self.statusbar, False, False, 0)
@@ -145,7 +140,15 @@ class SpryteWindow(Gtk.ApplicationWindow):
         print("TOOD: SpryteWindow.new_file")
 
     def open(self):
-        print("TODO: SpryteWindow.open")
+        files = FileChooserManager.open(self)
+
+        for file in files:
+            if not os.access(file, os.R_OK):
+                print("WARNING: no se tienen permisos de lectura para %s" % file)
+                break  # TODO: Cambiar por continue cuando agregue soporte para múltiples archivos
+
+            self.canvases_notebook.open_file(file)
+            break  # TODO: Agregar soporte para más de un archivo, luego borrar esto
 
     def save(self):
         print("TODO: SpryteWindow.save")
