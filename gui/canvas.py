@@ -344,7 +344,7 @@ class Canvas(Gtk.DrawingArea):
 
         if self.tool == ToolType.VERTICAL_MIRROR_PEN:
             for x, y in pixels:
-                mx = self.sprite_width - x
+                mx = self.sprite_width - x + 1
                 if (mx, y) not in pixels:
                     pixels.append((mx, y))
 
