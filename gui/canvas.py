@@ -131,11 +131,12 @@ class Canvas(Gtk.DrawingArea):
 
         self.resize()
 
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.BUTTON_RELEASE_MASK)
+
         if self.editable:
             self.add_events(Gdk.EventMask.SCROLL_MASK |
                             Gdk.EventMask.POINTER_MOTION_MASK |
-                            Gdk.EventMask.BUTTON_PRESS_MASK |
-                            Gdk.EventMask.BUTTON_RELEASE_MASK |
                             Gdk.EventMask.BUTTON_MOTION_MASK)
 
             self.connect("scroll-event", self._scroll_cb)
