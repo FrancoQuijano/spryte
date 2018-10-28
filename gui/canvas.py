@@ -4,7 +4,7 @@
 from __future__ import division
 from __future__ import print_function
 
-from .utils import Color
+from .utils import Color, ToolType
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -79,6 +79,8 @@ class Canvas(Gtk.DrawingArea):
         self.zoom = zoom
         self.sprite_width = sprite_width
         self.sprite_height = sprite_height
+        self.tool = ToolType.PEN
+        self._pending_tool = None
         self.primary_color = (0, 0, 0, 1)
         self.secondary_color = (1, 1, 1, 0)
         self.pixelmap = PixelMap(sprite_width, sprite_height)
@@ -182,6 +184,10 @@ class Canvas(Gtk.DrawingArea):
         if button in self._pressed_buttons:
             self._pressed_buttons.remove(button)
 
+        if self._pending_tool is not None and self._pressed_buttons == []:
+            self.tool = self._pending_tool
+            self.redraw()
+
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
         factor = self.zoom / 100
@@ -237,6 +243,16 @@ class Canvas(Gtk.DrawingArea):
         self.tool_size = size
         self.redraw()
 
+    def set_tool(self, tool):
+        if Gdk.BUTTON_PRIMARY in self._pressed_buttons or  \
+            Gdk.BUTTON_SECONDARY in self._pressed_buttons:
+
+            self._pending_tool = tool
+
+        else:
+            self.tool = tool
+            self.redraw()
+
     def set_zoom(self, zoom):
         self.zoom = zoom
         self.resize()
@@ -277,6 +293,9 @@ class Canvas(Gtk.DrawingArea):
     def get_selected_pixels(self):
         x, y = self.get_relative_coords(*self._mouse_position)
         pixels = [(x, y)]
+
+        if not ToolType.is_resizable(self.tool):
+            return pixels
 
         if self.tool_size >= 2:
             # La X es donde está el mouse
@@ -323,6 +342,12 @@ class Canvas(Gtk.DrawingArea):
                            (x + 1, y + 2),   # 14
                            (x + 2, y + 2)])  # 15
 
+        if self.tool == ToolType.VERTICAL_MIRROR_PEN:
+            for x, y in pixels:
+                mx = self.sprite_width - x
+                if (mx, y) not in pixels:
+                    pixels.append((mx, y))
+
         return pixels
 
 
@@ -350,6 +375,9 @@ class CanvasContainer(Gtk.Box):
 
     def set_tool_size(self, size):
         self.canvas.set_tool_size(size)
+
+    def set_tool(self, tool):
+        self.canvas.set_tool(tool)
 
     def set_zoom(self, zoom):
         self.canvas.set_zoom(zoom)

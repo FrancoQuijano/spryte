@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .utils import Color
+from .utils import Color, ToolType
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -10,16 +10,20 @@ from gi.repository import GObject
 
 class Tool(object):
 
-    def __init__(self, name="", icon=None, position=(0, 0)):
+    def __init__(self, name="", icon=None, position=(0, 0),
+                 tool_type=ToolType.PEN):
+
         self.name = name
         self.icon = icon
         self.position = position
+        self.type = tool_type
         self.button = None
 
 
 class ToolPalette(Gtk.Grid):
 
     __gsignals__ = {
+        "tool-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_INT]),
         "primary-color-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
         "secondary-color-changed": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT])
     }
@@ -30,22 +34,22 @@ class ToolPalette(Gtk.Grid):
         self.set_column_homogeneous(True)
 
         self.tools = [
-            Tool("Pen", icon="document-edit-symbolic", position=(0, 0)),
-            Tool("Bucket",              position=(0, 1)),
-            Tool("Eraser",              position=(0, 2)),
-            Tool("Rectangle",           position=(0, 3)),
-            Tool("Move",                position=(0, 4)),
-            Tool("Rectangle selection", position=(0, 5)),
-            Tool("Lighten",             position=(0, 6)),
-            Tool("Color Picker",        position=(0, 7)),
+            Tool("Pen", icon="document-edit-symbolic", position=(0, 0), tool_type=ToolType.PEN),
+            Tool("Bucket",              position=(0, 1), tool_type=ToolType.BUCKET),
+            Tool("Eraser",              position=(0, 2), tool_type=ToolType.ERASER),
+            Tool("Rectangle",           position=(0, 3), tool_type=ToolType.RECTANGLE),
+            Tool("Move",                position=(0, 4), tool_type=ToolType.MOVE),
+            Tool("Rectangle selection", position=(0, 5), tool_type=ToolType.RECTANGLE),
+            Tool("Lighten",             position=(0, 6), tool_type=ToolType.LIGHTEN),
+            Tool("Color Picker",        position=(0, 7), tool_type=ToolType.COLOR_PICKER),
 
-            Tool("Vertical mirror pen", position=(1, 0)),
-            Tool("Layer",               position=(1, 1)),
-            Tool("Stroke",              position=(1, 2)),
-            Tool("Circle",              position=(1, 3)),
-            Tool("Shape selection",     position=(1, 4)),
-            Tool("Lasso selection",     position=(1, 5)),
-            Tool("Dithering",           position=(1, 6)),
+            Tool("Vertical mirror pen", position=(1, 0), tool_type=ToolType.VERTICAL_MIRROR_PEN),
+            Tool("SPECIAL_BUCKET",      position=(1, 1), tool_type=ToolType.SPECIAL_BUCKET),
+            Tool("Stroke",              position=(1, 2), tool_type=ToolType.STROKE),
+            Tool("Circle",              position=(1, 3), tool_type=ToolType.CIRCLE),
+            Tool("Shape selection",     position=(1, 4), tool_type=ToolType.SHAPE_SELECTION),
+            Tool("Lasso selection",     position=(1, 5), tool_type=ToolType.LASSO_SELECTION),
+            Tool("Dithering",           position=(1, 6), tool_type=ToolType.DITHERING),
         ]
 
         self._create_tools_buttons()
@@ -66,7 +70,9 @@ class ToolPalette(Gtk.Grid):
                 button.set_image(image)
                 button.set_group(_button)
 
+            button.set_tooltip_text(tool.name)
             button.set_mode(False)
+            button.connect("toggled", self._tool_changed, tool.type)
             self.attach(button, tool.position[0], tool.position[1], 1, 1)
 
             tool.button = button
@@ -96,6 +102,9 @@ class ToolPalette(Gtk.Grid):
         color.blue = 1
         color.alpha = 1.0
         btn2.set_rgba(color)
+
+    def _tool_changed(self, button, tool):
+        self.emit("tool-changed", tool)
 
     def _primary_color_changed(self, btn):
         color = Color.gdk_to_cairo(btn.get_color(), btn.get_alpha())

@@ -27,6 +27,9 @@ class SpryteApp(Gtk.Application):
         Gtk.Application.do_startup(self)
         # TODO: Crear menús
 
+        settings = Gtk.Settings.get_default()
+        settings.set_property("gtk-application-prefer-dark-theme", True)
+
     def do_activate(self):
         if len(self.windows) == 0:
             win = SpryteWindow(application=self, title="Spryte")
@@ -58,6 +61,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.box.pack_start(self.layout, True, True, 0)
 
         self.tool_palette = ToolPalette()
+        self.tool_palette.connect("tool-changed", self._tool_changed_cb)
         self.tool_palette.connect("primary-color-changed", self._primary_color_changed_cb)
         self.tool_palette.connect("secondary-color-changed", self._secondary_color_changed_cb)
         self.layout.pack_start(self.tool_palette, False, False, 0)
@@ -73,6 +77,9 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
     def _tool_size_changed_cb(self, headerbar, size):
         self.canvas.set_tool_size(size)
+
+    def _tool_changed_cb(self, palette, tool):
+        self.canvas.set_tool(tool)
 
     def _primary_color_changed_cb(self, palette, color):
         self.canvas.set_primary_color(color)
