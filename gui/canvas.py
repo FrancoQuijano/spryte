@@ -267,7 +267,11 @@ class Canvas(Gtk.DrawingArea):
 
     def paint_pixel(self, x, y, color=Color.PRIMARY):
         cairo_color = (0, 0, 0, 1)
-        if color == Color.PRIMARY:
+
+        if self.tool == ToolType.ERASER:
+            cairo_color = (1, 1, 1, 0)
+
+        elif color == Color.PRIMARY:
             cairo_color = self.primary_color
 
         elif color == Color.SECONDARY:
