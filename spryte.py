@@ -7,6 +7,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 
+from gi.repository import Gio
 from gi.repository import Gtk
 
 import gui
@@ -23,12 +24,29 @@ class SpryteApp(Gtk.Application):
 
         self.windows = []
 
+    def _create_actions(self):
+        actions = [
+            ("new_file",  "app.new_file",  ["<Primary>N"], self.new_file),
+            ("open_file", "app.open_file", ["<Primary>O"], self.open),
+            ("save",      "app.save",      ["<Primary>S"], self.save)
+        ]
+
+        for name, detailed_name, accesls, callback in actions:
+            action = Gio.SimpleAction.new(name, None);
+            self.set_accels_for_action(detailed_name, accesls);
+            self.add_action(action);
+
+            if callback is not None:
+                action.connect("activate", callback)
+
     def do_startup(self):
         Gtk.Application.do_startup(self)
         # TODO: Crear menús
 
         settings = Gtk.Settings.get_default()
         settings.set_property("gtk-application-prefer-dark-theme", True)
+
+        self._create_actions()
 
     def do_activate(self):
         if len(self.windows) == 0:
@@ -39,6 +57,21 @@ class SpryteApp(Gtk.Application):
 
     def on_quit(self, action, param):
         self.quit()
+
+    def new_file(self, action, param):
+        # TODO: hacer save en la ventana actual, si es que voy a permitir
+        # más de una ventana en simultáneo
+        self.windows[0].new_file()
+
+    def open(self, action, param):
+        # TODO: hacer save en la ventana actual, si es que voy a permitir
+        # más de una ventana en simultáneo
+        self.windows[0].open()
+
+    def save(self, action, param):
+        # TODO: hacer save en la ventana actual, si es que voy a permitir
+        # más de una ventana en simultáneo
+        self.windows[0].save()
 
 
 class SpryteWindow(Gtk.ApplicationWindow):
@@ -99,6 +132,15 @@ class SpryteWindow(Gtk.ApplicationWindow):
     def _secondary_color_picked_cb(self, canvas, color):
         self.tool_palette.set_secondary_color(color)
         self.canvas.set_secondary_color(color)
+
+    def new_file(self):
+        print("TOOD: SpryteWindow.new_file")
+
+    def open(self):
+        print("TODO: SpryteWindow.open")
+
+    def save(self):
+        print("TODO: SpryteWindow.save")
 
 
 if __name__ == "__main__":
