@@ -9,6 +9,7 @@ from .utils import Color, ToolType
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GLib
+from gi.repository import GObject
 
 
 class Pixel(object):
@@ -46,6 +47,14 @@ class PixelMap(object):
 
         return None
 
+    def get_pixel_color(self, x, y):
+        pixel = self.get_pixel_at(x, y)
+        if pixel is not None:
+            return pixel.color
+
+        else:
+            return (1, 1, 1, 0)
+
     def set_pixel_color(self, x, y, color):
         pixel = self.get_pixel_at(x, y)
         if pixel is None and color[Color.ALPHA] != 0:
@@ -68,6 +77,11 @@ class PixelMap(object):
 
 
 class Canvas(Gtk.DrawingArea):
+
+    __gsignals__ = {
+        "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+    }
 
     def __init__(self, pixel_size=5, zoom=100, sprite_width=48,
                  sprite_height=48):
@@ -159,10 +173,10 @@ class Canvas(Gtk.DrawingArea):
         self._mouse_position = (event.x, event.y)
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
-            self.paint_selected_pixels(color=Color.PRIMARY)
+            self.apply_tool_to_selected_pixels(color=Color.PRIMARY)
 
         elif Gdk.BUTTON_SECONDARY in self._pressed_buttons:
-            self.paint_selected_pixels(color=Color.SECONDARY)
+            self.apply_tool_to_selected_pixels(color=Color.SECONDARY)
 
         self.redraw()
 
@@ -173,10 +187,10 @@ class Canvas(Gtk.DrawingArea):
             self._pressed_buttons.append(button)
 
         if button == Gdk.BUTTON_PRIMARY:
-            self.paint_selected_pixels(color=Color.PRIMARY)
+            self.apply_tool_to_selected_pixels(color=Color.PRIMARY)
 
         elif button == Gdk.BUTTON_SECONDARY:
-            self.paint_selected_pixels(color=Color.SECONDARY)
+            self.apply_tool_to_selected_pixels(color=Color.SECONDARY)
 
     def _button_release_cb(self, canvas, event):
         button = event.get_button()[1]
@@ -265,28 +279,41 @@ class Canvas(Gtk.DrawingArea):
         factor = self.pixel_size * self.zoom / 100
         return factor * (x - 1), factor * (y - 1)
 
-    def paint_pixel(self, x, y, color=Color.PRIMARY):
+    def apply_tool(self, x, y, color=Color.PRIMARY):
         cairo_color = (0, 0, 0, 1)
+        paint = True
 
-        if self.tool == ToolType.ERASER:
+        if ToolType.is_paint_tool(self.tool):
+            if color == Color.PRIMARY:
+                cairo_color = self.primary_color
+
+            elif color == Color.SECONDARY:
+                cairo_color = self.secondary_color
+
+        elif self.tool == ToolType.ERASER:
             cairo_color = (1, 1, 1, 0)
 
-        elif color == Color.PRIMARY:
-            cairo_color = self.primary_color
+        elif self.tool == ToolType.COLOR_PICKER:
+            paint = False
+            cairo_color = self.pixelmap.get_pixel_color(x, y)
 
-        elif color == Color.SECONDARY:
-            cairo_color = self.secondary_color
+            if color == Color.PRIMARY:
+                self.emit("primary-color-picked", cairo_color)
 
-        self.pixelmap.set_pixel_color(x, y, cairo_color)
-        self.redraw()
+            elif color == Color.SECONDARY:
+                self.emit("secondary-color-picked", cairo_color)
 
-    def paint_absolute_coords(self, x, y, color=Color.PRIMARY):
+        if paint:
+            self.pixelmap.set_pixel_color(x, y, cairo_color)
+            self.redraw()
+
+    def apply_tool_to_absolute_coords(self, x, y, color=Color.PRIMARY):
         x, y = self.get_relative_coords(x, y)
-        self.paint_pixel(x, y, color)
+        self.apply_tool(x, y, color)
 
-    def paint_selected_pixels(self, color=Color.PRIMARY):
+    def apply_tool_to_selected_pixels(self, color=Color.PRIMARY):
         for x, y in self.get_selected_pixels():
-            self.paint_pixel(x, y, color)
+            self.apply_tool(x, y, color)
 
     def set_primary_color(self, color):
         self.primary_color = color
@@ -357,25 +384,38 @@ class Canvas(Gtk.DrawingArea):
 
 class CanvasContainer(Gtk.Box):
 
+    __gsignals__ = {
+        "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+    }
+
     def __init__(self, pixel_size=25, zoom=100, sprite_width=48,
                  sprite_height=48):
         super(CanvasContainer, self).__init__()
 
         self.set_border_width(5)
 
-        box1 = Gtk.Box()
-        box1.set_orientation(Gtk.Orientation.VERTICAL)
-        self.canvas = Canvas(pixel_size, zoom, sprite_width, sprite_height)
-        box1.pack_start(self.canvas, True, False, 0)
-
-        box2 = Gtk.Box()
-        box2.set_orientation(Gtk.Orientation.HORIZONTAL)
-        box2.pack_start(box1, True, False, 0)
-
         self.scroll = Gtk.ScrolledWindow()
         self.pack_start(self.scroll, True, True, 0)
 
-        self.scroll.add(box2)
+        box1 = Gtk.Box()
+        box1.set_orientation(Gtk.Orientation.HORIZONTAL)
+        self.scroll.add(box1)
+
+        box2 = Gtk.Box()
+        box2.set_orientation(Gtk.Orientation.VERTICAL)
+        box1.pack_start(box2, True, False, 0)
+
+        self.canvas = Canvas(pixel_size, zoom, sprite_width, sprite_height)
+        self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
+        self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
+        box2.pack_start(self.canvas, True, False, 0)
+
+    def _primary_color_picked_cb(self, canvas, color):
+        self.emit("primary-color-picked", color)
+
+    def _secondary_color_picked_cb(self, canvas, color):
+        self.emit("secondary-color-picked", color)
 
     def set_tool_size(self, size):
         self.canvas.set_tool_size(size)

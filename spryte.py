@@ -67,6 +67,8 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
         self.canvas = CanvasContainer(pixel_size=20, sprite_width=32, sprite_height=32)
+        self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
+        self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
         self.layout.pack_start(self.canvas, True, True, 0)
 
         self.statusbar = Statusbar()
@@ -89,6 +91,14 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
     def _zoom_changed_cb(self, statusbar, zoom):
         self.canvas.set_zoom(zoom)
+
+    def _primary_color_picked_cb(self, canvas, color):
+        self.tool_palette.set_primary_color(color)
+        self.canvas.set_primary_color(color)
+
+    def _secondary_color_picked_cb(self, canvas, color):
+        self.tool_palette.set_secondary_color(color)
+        self.canvas.set_secondary_color(color)
 
 
 if __name__ == "__main__":

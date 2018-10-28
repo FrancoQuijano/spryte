@@ -79,29 +79,19 @@ class ToolPalette(Gtk.Grid):
             _button = button
 
     def _create_color_buttons(self):
-        btn1 = Gtk.ColorButton()
-        btn1.set_use_alpha(True)
-        btn1.connect("color-set", self._primary_color_changed)
-        self.attach(btn1, 0, 8, 1, 1)
+        self.primary_color_button = Gtk.ColorButton()
+        self.primary_color_button.set_use_alpha(True)
+        self.primary_color_button.connect("color-set", self._primary_color_changed)
+        self.attach(self.primary_color_button, 0, 8, 1, 1)
 
-        color = Gdk.RGBA()
-        color.red = 0
-        color.green = 0
-        color.blue = 0
-        color.alpha = 1
-        btn1.set_rgba(color)
+        self.set_primary_color((0, 0, 0, 1))
 
-        btn2 = Gtk.ColorButton()
-        btn2.set_use_alpha(True)
-        btn2.connect("color-set", self._secondary_color_changed)
-        self.attach(btn2, 1, 8, 1, 1)
+        self.secondary_color_button = Gtk.ColorButton()
+        self.secondary_color_button.set_use_alpha(True)
+        self.secondary_color_button.connect("color-set", self._secondary_color_changed)
+        self.attach(self.secondary_color_button, 1, 8, 1, 1)
 
-        color = Gdk.RGBA()
-        color.red = 1
-        color.green = 1
-        color.blue = 1
-        color.alpha = 1.0
-        btn2.set_rgba(color)
+        self.set_secondary_color((1, 1, 1, 1))
 
     def _tool_changed(self, button, tool):
         self.emit("tool-changed", tool)
@@ -113,3 +103,11 @@ class ToolPalette(Gtk.Grid):
     def _secondary_color_changed(self, btn):
         color = Color.gdk_to_cairo(btn.get_color(), btn.get_alpha())
         self.emit("secondary-color-changed", color)
+
+    def set_primary_color(self, color):
+        self.primary_color_button.set_color(Color.cairo_to_gdk(color))
+        self.primary_color_button.set_alpha(color[3] * 65535)
+
+    def set_secondary_color(self, color):
+        self.secondary_color_button.set_color(Color.cairo_to_gdk(color))
+        self.secondary_color_button.set_alpha(color[3] * 65535)

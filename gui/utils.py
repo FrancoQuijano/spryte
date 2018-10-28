@@ -3,6 +3,8 @@
 
 from __future__ import division
 
+from gi.repository import Gdk
+
 
 class Color:
 
@@ -20,6 +22,10 @@ class Color:
                 color.green / 65535,
                 color.blue / 65535,
                 alpha / 65535)
+
+    @classmethod
+    def cairo_to_gdk(self, color):
+        return Gdk.Color.from_floats(*(color[:3]))
 
 
 class ToolType:
@@ -50,4 +56,18 @@ class ToolType:
             self.SHAPE_SELECTION,
             self.LASSO_SELECTION,
             self.COLOR_PICKER
+        ]
+
+    @classmethod
+    def is_paint_tool(self, tool):
+        return tool in [
+            self.PEN,
+            self.VERTICAL_MIRROR_PEN,
+            self.BUCKET,
+            self.SPECIAL_BUCKET,
+            self.RECTANGLE,
+            self.STROKE,
+            self.CIRCLE,
+            self.LIGHTEN,
+            self.DITHERING
         ]
