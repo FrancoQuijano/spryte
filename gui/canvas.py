@@ -104,6 +104,9 @@ class Canvas(Gtk.DrawingArea):
         self._pressed_buttons = []
         self._mouse_position = (-1, -1)
 
+        self.set_vexpand(False)
+        self.set_hexpand(False)
+
         # Información para pruebas:
         pixels = [
             (1, 1, (1, 0, 0, 1)),
