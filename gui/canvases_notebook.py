@@ -30,7 +30,8 @@ class CanvasNotebookTab(Gtk.Box):
         self.overlay.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK |
                                 Gdk.EventMask.LEAVE_NOTIFY_MASK |
                                 Gdk.EventMask.BUTTON_PRESS_MASK |
-                                Gdk.EventMask.BUTTON_RELEASE_MASK)
+                                Gdk.EventMask.BUTTON_RELEASE_MASK |
+                                Gdk.EventMask.BUTTON_MOTION_MASK)
 
         self.overlay.connect("enter-notify-event", self._enter_cb)
         self.overlay.connect("leave-notify-event", self._leave_cb)
