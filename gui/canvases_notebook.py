@@ -116,6 +116,7 @@ class CanvasesNotebook(Gtk.Notebook):
         self.set_scrollable(True)
         self.connect("realize", self._realize_cb)
         self.connect("switch-page", self._switch_page_cb)
+        self.connect("page-reordered", self._page_reordered_cb)
 
     def _realize_cb(self, notebook):
         self._realized = True
@@ -146,6 +147,15 @@ class CanvasesNotebook(Gtk.Notebook):
             tab._associated.destroy()
             tab.destroy()
 
+        self.reset_indices()
+
+    def _page_reordered_cb(self, notebook, child, page_num):
+        if page_num == len(self.get_children()) - 1:
+            self.append_page()
+
+        self.reset_indices()
+
+    def reset_indices(self):
         idx = 1
         for child in self.get_children():
             tab = self.get_tab_label(child)
@@ -165,6 +175,8 @@ class CanvasesNotebook(Gtk.Notebook):
         self.canvases[canvas] = tab
 
         super().insert_page(canvas, tab, self.get_n_pages())
+        self.set_tab_reorderable(canvas, True)
+
         canvas.show_all()
         tab.show_all()
 
