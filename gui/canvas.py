@@ -320,7 +320,7 @@ class Canvas(Gtk.DrawingArea):
 
     def apply_tool(self, x, y, color=Color.PRIMARY):
         cairo_color = (0, 0, 0, 1)
-        paint = True
+        paint_selected_pixel = True
 
         if ToolType.is_paint_tool(self.tool):
             if color == Color.PRIMARY:
@@ -329,11 +329,22 @@ class Canvas(Gtk.DrawingArea):
             elif color == Color.SECONDARY:
                 cairo_color = self.secondary_color
 
+            if self.tool == ToolType.SPECIAL_BUCKET:
+                paint_selected_pixel = False
+                selected_color = self.pixelmap.get_pixel_color(x, y)
+
+                for _x in range(0, self.sprite_width):
+                    for _y in range(0, self.sprite_height):
+                        if self.pixelmap.get_pixel_color(_x, _y) == selected_color:
+                            self.pixelmap.set_pixel_color(_x, _y, cairo_color)
+
+                self.redraw()
+
         elif self.tool == ToolType.ERASER:
             cairo_color = (1, 1, 1, 0)
 
         elif self.tool == ToolType.COLOR_PICKER:
-            paint = False
+            paint_selected_pixel = False
             cairo_color = self.pixelmap.get_pixel_color(x, y)
 
             if color == Color.PRIMARY:
@@ -342,7 +353,7 @@ class Canvas(Gtk.DrawingArea):
             elif color == Color.SECONDARY:
                 self.emit("secondary-color-picked", cairo_color)
 
-        if paint:
+        if paint_selected_pixel:
             self.pixelmap.set_pixel_color(x, y, cairo_color)
             self.redraw()
 
