@@ -188,10 +188,19 @@ class CanvasesNotebook(Gtk.Notebook):
         for canvas in self.canvases.keys():
             canvas.set_zoom(zoom)
 
+    def get_current_canvas(self):
+        return self.get_children()[self.get_current_page()]
+
     def open_file(self, file):
-        current_canvas = self.get_children()[self.get_current_page()]
+        current_canvas = self.get_current_canvas()
 
         if current_canvas.modified:
             self.append_page()
 
         current_canvas.set_file(file)
+
+    def get_file(self):
+        return self.get_current_canvas().get_file()
+
+    def set_file(self, file, refresh=True):
+        self.get_current_canvas().set_file(file, refresh)

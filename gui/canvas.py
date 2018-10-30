@@ -175,7 +175,6 @@ class Canvas(Gtk.DrawingArea):
         if not self.resizable:
             alloc = self.get_allocation()
             m = min(alloc.width, alloc.height)
-            #self.pixel_size = m / max(self.sprite_width, self.sprite_height)
             self.zoom = 100 * min(alloc.width / self.sprite_width, alloc.height / self.sprite_height)
             return
 
@@ -201,7 +200,6 @@ class Canvas(Gtk.DrawingArea):
             self.zoom -= 10
 
         self.resize()
-        #self.redraw()
 
         # Me aseguro de que no se haga scroll ya que se está haciendo zoom
         return True
@@ -278,7 +276,6 @@ class Canvas(Gtk.DrawingArea):
                 ctx.fill()
 
     def _draw_selected_pixels(self, ctx):
-        # Por ahora la única herramienta es el pincel de tamaño 1
         ctx.set_source_rgba(1, 1, 1, 0.2)
 
         for x, y in self.get_selected_pixels():
@@ -461,6 +458,9 @@ class Canvas(Gtk.DrawingArea):
     def get_resizable(self):
         return self.resizable
 
+    def get_file(self):
+        return self.file
+
 
 class CanvasContainer(Gtk.Box):
 
@@ -529,8 +529,8 @@ class CanvasContainer(Gtk.Box):
     def set_pixelmap(self, pixelmap, refresh=True):
         self.canvas.set_pixelmap(pixelmap, refresh=True)
 
-    def set_file(self, filename):
-        self.canvas.set_file(filename)
+    def set_file(self, filename, refresh=True):
+        self.canvas.set_file(filename, refresh=refresh)
 
     def set_sprite_size(self, width, height):
         self.canvas.set_sprite_size(width, height)
@@ -549,3 +549,6 @@ class CanvasContainer(Gtk.Box):
 
     def get_resizable(self):
         return self.canvas.get_resizable()
+
+    def get_file(self):
+        return self.canvas.get_file()
