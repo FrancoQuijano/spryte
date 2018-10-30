@@ -4,6 +4,9 @@
 from __future__ import division
 
 import os
+import numpy
+
+from PIL import Image
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -29,6 +32,13 @@ class Color:
     @classmethod
     def cairo_to_gdk(self, color):
         return Gdk.Color.from_floats(*(color[:3]))
+
+    @classmethod
+    def cairo_to_rgba(self, color, scale=255):
+        return (int(color[0] * scale),
+                int(color[1] * scale),
+                int(color[2] * scale),
+                int(color[3] * scale))
 
     @classmethod
     def RGBA_from_values(self, color):
@@ -107,8 +117,64 @@ class FileChooserManager:
 
         response = dialog.run()
         files = []
+
         if response == Gtk.ResponseType.OK:
             files = dialog.get_filenames()
 
         dialog.destroy()
         return files
+
+    @classmethod
+    def save(self, window, directory=None):
+        if directory is None:
+            directory = os.path.expanduser("~")
+
+        dialog = Gtk.FileChooserDialog("Please choose a file", window,
+                                       Gtk.FileChooserAction.SAVE,
+                                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        dialog.set_do_overwrite_confirmation(True)
+
+        response = dialog.run()
+        file = None
+
+        if response == Gtk.ResponseType.OK:
+            file = dialog.get_filename()
+
+        dialog.destroy()
+        return file
+
+
+class FileManagement:
+
+    @classmethod
+    def _save_as_svg(self, canvas, file):
+        print("FileManagement.save_as_svg")
+
+    @classmethod
+    def _save_as_png(self, canvas, file):
+        width, height = canvas.get_sprite_size()
+        pixelmap = canvas.get_pixelmap()
+
+        pixels = []
+
+        for y in range(0, height):
+            pixels.append([])
+
+        for x in range(0, width):
+            for y in range(0, height):
+                color = Color.cairo_to_rgba(pixelmap.get_pixel_color(x + 1, y + 1))
+                pixels[y].append(color)
+
+        array = numpy.array(pixels, dtype=numpy.uint8)
+        img = Image.fromarray(array)
+        img.save(file)
+
+    @classmethod
+    def save(self, canvas, file):
+        if file.endswith(".svg"):
+            FileManagement._save_as_svg(canvas, file)
+
+        else:
+            FileManagement._save_as_png(canvas, file)

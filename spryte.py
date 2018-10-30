@@ -18,6 +18,7 @@ from gui import CanvasContainer
 from gui import Statusbar
 from gui import CanvasesNotebook
 from gui.utils import FileChooserManager
+from gui.utils import FileManagement
 
 
 class SpryteApp(Gtk.Application):
@@ -31,7 +32,8 @@ class SpryteApp(Gtk.Application):
         actions = [
             ("new_file",  "app.new_file",  ["<Primary>N"], self.new_file),
             ("open_file", "app.open_file", ["<Primary>O"], self.open),
-            ("save",      "app.save",      ["<Primary>S"], self.save)
+            ("save",      "app.save",      ["<Primary>S"], self.save),
+            ("save_as",   "app.save_as",   ["<Primary><Shift>S"], self.save_as),
         ]
 
         for name, detailed_name, accesls, callback in actions:
@@ -61,20 +63,25 @@ class SpryteApp(Gtk.Application):
     def on_quit(self, action, param):
         self.quit()
 
-    def new_file(self, action, param):
+    def get_current_window(self):
         # TODO: hacer save en la ventana actual, si es que voy a permitir
         # más de una ventana en simultáneo
-        self.windows[0].new_file()
+        return self.windows[0]
+
+    def new_file(self, action, param):
+        self.get_current_window().new_file()
 
     def open(self, action, param):
-        # TODO: hacer save en la ventana actual, si es que voy a permitir
-        # más de una ventana en simultáneo
-        self.windows[0].open()
+        self.get_current_window().open()
 
     def save(self, action, param):
-        # TODO: hacer save en la ventana actual, si es que voy a permitir
-        # más de una ventana en simultáneo
-        self.windows[0].save()
+        self.get_current_window().save()
+
+    def save(self, action, param):
+        self.get_current_window().save()
+
+    def save_as(self, action, param):
+        self.get_current_window().save_as()
 
 
 class SpryteWindow(Gtk.ApplicationWindow):
@@ -151,7 +158,17 @@ class SpryteWindow(Gtk.ApplicationWindow):
             break  # TODO: Agregar soporte para más de un archivo, luego borrar esto
 
     def save(self):
-        print("TODO: SpryteWindow.save")
+        file = self.canvases_notebook.get_file()
+        if file is None:
+            self.save_as()
+            return
+
+    def save_as(self):
+        file = FileChooserManager.save(self)
+
+        if file is not None:
+            FileManagement.save(self.canvases_notebook.get_current_canvas(), file)
+            self.canvases_notebook.set_file(file, refresh=False)
 
 
 if __name__ == "__main__":
