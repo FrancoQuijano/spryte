@@ -184,18 +184,18 @@ def flood_fill(pixelmap, x, y, current_color, new_color):
     if current_color == new_color:
         return
 
-    if x > 0 and pixelmap.get_pixel_color(x - 1, y) == current_color:
+    if x > 1 and pixelmap.get_pixel_color(x - 1, y) == current_color:
         pixelmap.set_pixel_color(x - 1, y, new_color)
         flood_fill(pixelmap, x - 1, y, current_color, new_color)
 
-    if x < pixelmap.height and pixelmap.get_pixel_color(x + 1, y) == current_color:
+    if x < pixelmap.width and pixelmap.get_pixel_color(x + 1, y) == current_color:
         pixelmap.set_pixel_color(x + 1, y, new_color)
         flood_fill(pixelmap, x + 1, y, current_color, new_color)
 
-    if y > 0 and pixelmap.get_pixel_color(x, y - 1) == current_color:
-            pixelmap.set_pixel_color(x, y - 1, new_color)
-            flood_fill(pixelmap, x, y - 1, current_color, new_color)
+    if y > 1 and pixelmap.get_pixel_color(x, y - 1) == current_color:
+        pixelmap.set_pixel_color(x, y - 1, new_color)
+        flood_fill(pixelmap, x, y - 1, current_color, new_color)
 
     if y < pixelmap.height and  pixelmap.get_pixel_color(x, y + 1) == current_color:
-            pixelmap.set_pixel_color(x, y + 1, new_color)
-            flood_fill(pixelmap, x, y + 1, current_color, new_color)
+        pixelmap.set_pixel_color(x, y + 1, new_color)
+        flood_fill(pixelmap, x, y + 1, current_color, new_color)

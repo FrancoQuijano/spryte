@@ -339,8 +339,8 @@ class Canvas(Gtk.DrawingArea):
                 paint_selected_pixel = False
                 selected_color = self.pixelmap.get_pixel_color(x, y)
 
-                for _x in range(0, self.sprite_width):
-                    for _y in range(0, self.sprite_height):
+                for _x in range(1, self.sprite_width + 1):
+                    for _y in range(1, self.sprite_height + 1):
                         if self.pixelmap.get_pixel_color(_x, _y) == selected_color:
                             self.pixelmap.set_pixel_color(_x, _y, cairo_color)
 
