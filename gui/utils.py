@@ -149,7 +149,11 @@ class FileChooserManager:
 class FileManagement:
 
     @classmethod
-    def save(self, canvas, file):
+    def _save_as_svg(self, canvas, file):
+        print("FileManagement.save_as_svg")
+
+    @classmethod
+    def _save_as_png(self, canvas, file):
         width, height = canvas.get_sprite_size()
         pixelmap = canvas.get_pixelmap()
 
@@ -166,3 +170,11 @@ class FileManagement:
         array = numpy.array(pixels, dtype=numpy.uint8)
         img = Image.fromarray(array)
         img.save(file)
+
+    @classmethod
+    def save(self, canvas, file):
+        if file.endswith(".svg"):
+            FileManagement._save_as_svg(canvas, file)
+
+        else:
+            FileManagement._save_as_png(canvas, file)
