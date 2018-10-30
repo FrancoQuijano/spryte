@@ -194,10 +194,10 @@ class Canvas(Gtk.DrawingArea):
             return False
 
         if event.direction == Gdk.ScrollDirection.UP:
-            self.zoom += 10
+            self.zoom = min(2000, self.zoom + 10)
 
         else:
-            self.zoom -= 10
+            self.zoom = max(1, self.zoom - 10)
 
         self.resize()
 
