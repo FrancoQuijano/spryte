@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from PIL import Image
 
-from .utils import Color, ToolType, flood_fill
+from .utils import Color, ToolType, PaintAlgorithms
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -330,7 +330,7 @@ class Canvas(Gtk.DrawingArea):
                 paint_selected_pixel = False
                 current_pixel = self.get_selected_pixels()[0]
                 current_color = self.pixelmap.get_pixel_color(*current_pixel)
-                flood_fill(self.pixelmap, x, y, current_color, cairo_color)
+                PaintAlgorithms.flood_fill(self.pixelmap, x, y, current_color, cairo_color)
 
                 self.pixelmap.set_pixel_color(x, y, cairo_color)
                 self.redraw()
@@ -338,11 +338,7 @@ class Canvas(Gtk.DrawingArea):
             elif self.tool == ToolType.SPECIAL_BUCKET:
                 paint_selected_pixel = False
                 selected_color = self.pixelmap.get_pixel_color(x, y)
-
-                for _x in range(1, self.sprite_width + 1):
-                    for _y in range(1, self.sprite_height + 1):
-                        if self.pixelmap.get_pixel_color(_x, _y) == selected_color:
-                            self.pixelmap.set_pixel_color(_x, _y, cairo_color)
+                PaintAlgorithms.replace(self.pixelmap, selected_color, cairo_color)
 
                 self.redraw()
 
