@@ -128,32 +128,6 @@ class Canvas(Gtk.DrawingArea):
 
         self.set_vexpand(False)
         self.set_hexpand(False)
-
-        # Información para pruebas:
-        pixels = [
-            (1, 1, (1, 0, 0, 1)),
-            (2, 2, (0, 1, 0, 1)),
-            (3, 3, (0, 0, 1, 1)),
-            (4, 4, (0, 0, 0, 1)),
-            (5, 5, (1, 0, 0, 1)),
-            (6, 1, (0, 0, 0, 1)),
-            (7, 2, (1, 0, 0, 1)),
-            (8, 3, (0, 1, 0, 1)),
-            (9, 4, (0, 0, 1, 1)),
-            (10, 5, (0, 0, 0, 1)),
-
-            (1, 2, (0, 1, 1, 1)),
-            (2, 3, (1, 0, 1, 1)),
-            (3, 4, (1, 1, 0, 1)),
-
-            (1, 3, (0.5, 0.75, 1, 1)),
-            (2, 4, (0.75, 0.5, 1, 1)),
-            (1, 4, (0, 0.75, 0.5, 1))
-        ]
-
-        for x, y, color in pixels:
-            self.pixelmap.set_pixel_color(x, y, color)
-
         self.resize()
 
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
