@@ -273,8 +273,8 @@ class Canvas(Gtk.DrawingArea):
             for y in range(1, self.sprite_height + 1):
                 self.pixelmap.delete_pixel_at(x, y)
 
-        for x in range(1, width):
-            for y in range(height + 1, self.sprite_height):
+        for x in range(1, width + 1):
+            for y in range(height + 1, self.sprite_height + 1):
                 self.pixelmap.delete_pixel_at(x, y)
 
         self.set_sprite_size(width, height)
