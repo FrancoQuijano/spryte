@@ -267,6 +267,18 @@ class Canvas(Gtk.DrawingArea):
         self.tool_size = size
         self.redraw()
 
+    def set_layout_size(self, size):
+        width, height = size
+        for x in range(width + 1, self.sprite_width + 1):
+            for y in range(1, self.sprite_height + 1):
+                self.pixelmap.delete_pixel_at(x, y)
+
+        for x in range(1, width):
+            for y in range(height + 1, self.sprite_height):
+                self.pixelmap.delete_pixel_at(x, y)
+
+        self.set_sprite_size(width, height)
+
     def set_tool(self, tool):
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons or  \
             Gdk.BUTTON_SECONDARY in self._pressed_buttons:
@@ -431,6 +443,8 @@ class Canvas(Gtk.DrawingArea):
     def set_sprite_size(self, width, height):
         self.sprite_width = width
         self.sprite_height = height
+        self.pixelmap.width = width
+        self.pixelmap.height = height
         self.resize()
 
     def get_sprite_size(self):
@@ -500,6 +514,9 @@ class CanvasContainer(Gtk.Box):
 
     def set_tool_size(self, size):
         self.canvas.set_tool_size(size)
+
+    def set_layout_size(self, size):
+        self.canvas.set_layout_size(size)
 
     def set_tool(self, tool):
         self.canvas.set_tool(tool)

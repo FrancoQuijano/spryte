@@ -156,7 +156,7 @@ class FileManagement:
 
     @classmethod
     def _save_as_svg(self, pixelmap, file):
-        pixel_size = 20
+        pixel_size = 20  # FIXME: Hay que respetar el tamaño del layout
 
         indent = "  "
         output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)

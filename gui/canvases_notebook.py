@@ -185,6 +185,10 @@ class CanvasesNotebook(Gtk.Notebook):
         for canvas in self.canvases.keys():
             canvas.set_tool_size(size)
 
+    def set_layout_size(self, size):
+        for canvas in self.canvases.keys():
+            canvas.set_layout_size(size)
+
     def set_tool(self, tool):
         for canvas in self.canvases.keys():
             canvas.set_tool(tool)

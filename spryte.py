@@ -93,6 +93,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
         self.headerbar = HeaderBar()
         self.headerbar.connect("tool-size-changed", self._tool_size_changed_cb)
+        self.headerbar.connect("layout-size-changed", self._layout_size_changed_cb)
         self.set_titlebar(self.headerbar)
 
         self.box = Gtk.Box()
@@ -122,6 +123,10 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
     def _tool_size_changed_cb(self, headerbar, size):
         self.canvases_notebook.set_tool_size(size)
+
+    def _layout_size_changed_cb(self, headerbar, size):
+        # TODO: Hay que cambiar el tamaño de las previews en las tabs
+        self.canvases_notebook.set_layout_size(size)
 
     def _tool_changed_cb(self, palette, tool):
         self.canvases_notebook.set_tool(tool)
