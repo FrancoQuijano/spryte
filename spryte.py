@@ -167,7 +167,8 @@ class SpryteWindow(Gtk.ApplicationWindow):
         file = FileChooserManager.save(self)
 
         if file is not None:
-            FileManagement.save(self.canvases_notebook.get_current_canvas(), file)
+            pixelmap = self.canvases_notebook.get_current_canvas().get_pixelmap()
+            FileManagement.save(pixelmap, file)
             self.canvases_notebook.set_file(file, refresh=False)
 
 

@@ -41,6 +41,12 @@ class Color:
                 int(color[3] * scale))
 
     @classmethod
+    def cairo_to_rgb(self, color, scale=255):
+        # Warning: se pierde la información de la transparencia
+        color = self.cairo_to_rgba(color, scale)
+        return (color[0], color[1], color[2])
+
+    @classmethod
     def RGBA_from_values(self, color):
         rgba = Gdk.RGBA()
         rgba.red, rgba.blue, rgba.green, rgba.alpha = color
@@ -149,14 +155,29 @@ class FileChooserManager:
 class FileManagement:
 
     @classmethod
-    def _save_as_svg(self, canvas, file):
-        print("FileManagement.save_as_svg")
+    def _save_as_svg(self, pixelmap, file):
+        pixel_size = 20
+
+        indent = "  "
+        output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)
+
+        for pixel in pixelmap.pixels:
+            color = Color.cairo_to_rgb(pixel.color)
+            x = (pixel.x - 1) * pixel_size
+            y = (pixel.y - 1) * pixel_size
+            output += '%s<rect x="%d" y="%d" width="%d" height="%d" ' \
+                      'style="fill:rgb(%d,%d,%d)" fill-opacity="%f" />\n' % (
+                        indent, x, y, pixel_size, pixel_size,
+                        *color, pixel.color[3])
+
+        output += "</svg>"
+
+        with open(file, "w") as pfile:
+            pfile.write(output)
 
     @classmethod
-    def _save_as_png(self, canvas, file):
-        width, height = canvas.get_sprite_size()
-        pixelmap = canvas.get_pixelmap()
-
+    def _save_as_png(self, pixelmap, file):
+        width, height = pixelmap.width, pixelmap.height
         pixels = []
 
         for y in range(0, height):
@@ -172,12 +193,12 @@ class FileManagement:
         img.save(file)
 
     @classmethod
-    def save(self, canvas, file):
+    def save(self, pixelmap, file):
         if file.endswith(".svg"):
-            FileManagement._save_as_svg(canvas, file)
+            FileManagement._save_as_svg(pixelmap, file)
 
         else:
-            FileManagement._save_as_png(canvas, file)
+            FileManagement._save_as_png(pixelmap, file)
 
 
 class PaintAlgorithms:
