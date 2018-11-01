@@ -234,3 +234,11 @@ class CanvasesNotebook(Gtk.Notebook):
 
     def set_file(self, file, refresh=True):
         self.get_current_canvas().set_file(file, refresh)
+
+    def get_pixelmaps(self):
+        pixelmaps = []
+
+        for canvas in self.get_children()[:-1]:
+            pixelmaps.append(canvas.get_pixelmap())
+
+        return pixelmaps

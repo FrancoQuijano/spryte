@@ -7,6 +7,7 @@ import os
 import numpy
 
 from PIL import Image
+from PIL import ImageSequence
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -159,7 +160,7 @@ class FileChooserManager:
 class FileManagement:
 
     @classmethod
-    def _save_as_svg(self, pixelmap, file):
+    def pixelmap_to_svg(self, pixelmap):
         pixel_size = 20  # FIXME: Hay que respetar el tamaño del layout
 
         indent = "  "
@@ -175,12 +176,16 @@ class FileManagement:
                         *color, pixel.color[3])
 
         output += "</svg>"
+        return output
 
+    @classmethod
+    def _save_as_svg(self, pixelmap, file):
+        output = FileManagement.pixelmap_to_svg(pixelmap)
         with open(file, "w") as pfile:
             pfile.write(output)
 
     @classmethod
-    def _save_as_png(self, pixelmap, file):
+    def pixelmap_to_png(self, pixelmap):
         width, height = pixelmap.width, pixelmap.height
         pixels = []
 
@@ -193,16 +198,59 @@ class FileManagement:
                 pixels[y].append(color)
 
         array = numpy.array(pixels, dtype=numpy.uint8)
-        img = Image.fromarray(array)
-        img.save(file)
+        return Image.fromarray(array)
 
     @classmethod
-    def save(self, pixelmap, file):
+    def _save_as_png(self, pixelmap, file):
+        image = FileManagement.pixelmap_to_png(pixelmap)
+        image.save(file)
+
+    @classmethod
+    def pixelmaps_to_pngs(self, pixelmaps):
+        return [FileManagement.pixelmap_to_png(pixelmap) for pixelmap in pixelmaps]
+
+    @classmethod
+    def _save_as_gif(self, pixelmaps, file):
+        frames = FileManagement.pixelmaps_to_pngs(pixelmaps)
+        primera = frames[0]
+        del frames[0]
+
+        loop = 0  # TODO
+        duration = 250  # TODO
+
+        primera.save(file, save_all=True, append_images=frames,
+                     duration=duration, loop=loop,
+                     transparency=0)
+
+    @classmethod
+    def save(self, pixelmaps, file):
+        # TODO: Agregar la opción de guardar (en los formatos individuales:
+        # png, svg, etc..) en una sola imagen, un frame al lado del otro
+
         if file.endswith(".svg"):
-            FileManagement._save_as_svg(pixelmap, file)
+            i = 1
+            file = file[:-len(".svg")]
+            for pixelmap in pixelmaps:
+                _file = file + " %d.svg" % i
+                FileManagement._save_as_svg(pixelmap, _file)
+
+                i += 1
+
+        elif file.endswith(".png"):
+            i = 1
+            file = file[:-len(".svg")]
+            for pixelmap in pixelmaps:
+                _file = file + " %d.png" % i
+                FileManagement._save_as_png(pixelmap, _file)
+
+                i += 1
+
+        elif file.endswith(".gif"):
+            FileManagement._save_as_gif(pixelmaps, file)
 
         else:
-            FileManagement._save_as_png(pixelmap, file)
+            print("Actualmente el formato %s no está soportado, guardando como png..." % file.split(".")[-1])
+            FileManagement.save(pixelmaps, file + ".png")
 
 
 class PaintAlgorithms:
