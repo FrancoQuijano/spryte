@@ -3,6 +3,7 @@
 
 from .utils import Color
 from .canvas import Canvas
+from .canvas import CanvasConfig
 from .canvas import CanvasContainer
 
 from gi.repository import Gtk
@@ -38,8 +39,7 @@ class CanvasNotebookTab(Gtk.Box):
         self.pack_start(self.overlay, True, True, 0)
 
         self.canvas = Canvas(pixel_size=1, zoom=300,
-                             sprite_width=self._associated.canvas.sprite_width,
-                             sprite_height=self._associated.canvas.sprite_height,
+                             layout_size=self._associated.canvas.config.layout_size,
                              editable=False)
 
         self.canvas.set_resizable(False)
@@ -112,6 +112,7 @@ class CanvasesNotebook(Gtk.Notebook):
         self.canvases = {}
 
         self._realized = False
+        self._canvas_config = None
 
         self.set_tab_pos(Gtk.PositionType.LEFT)
         self.set_scrollable(True)
@@ -165,9 +166,12 @@ class CanvasesNotebook(Gtk.Notebook):
             idx += 1
 
     def append_page(self):
-        canvas = CanvasContainer(sprite_width=32, sprite_height=32)
+        canvas = CanvasContainer(config=self._canvas_config)
         canvas.connect("changed", self._canvas_changed_cb)
         canvas.connect("size-changed", self._canvas_size_changed_cb)
+
+        if self._canvas_config is None:
+            self._canvas_config = canvas.canvas.config
 
         tab = CanvasNotebookTab(canvas)
         tab.set_index(self.get_n_pages() + 1)
@@ -181,29 +185,23 @@ class CanvasesNotebook(Gtk.Notebook):
         canvas.show_all()
         tab.show_all()
 
+    def set_tool(self, tool):
+        self._canvas_config.tool = tool
+
     def set_tool_size(self, size):
-        for canvas in self.canvases.keys():
-            canvas.set_tool_size(size)
+        self._canvas_config.tool_size = size
 
     def set_layout_size(self, size):
-        for canvas in self.canvases.keys():
-            canvas.set_layout_size(size)
-
-    def set_tool(self, tool):
-        for canvas in self.canvases.keys():
-            canvas.set_tool(tool)
+        self._canvas_config.layout_size = size
 
     def set_primary_color(self, color):
-        for canvas in self.canvases.keys():
-            canvas.set_primary_color(color)
+        self._canvas_config.primary_color = color
 
     def set_secondary_color(self, color):
-        for canvas in self.canvases.keys():
-            canvas.set_secondary_color(color)
+        self._canvas_config.secondary_color = color
 
     def set_zoom(self, zoom):
-        for canvas in self.canvases.keys():
-            canvas.set_zoom(zoom)
+        self._canvas_config.zoom = zoom
 
     def get_current_canvas(self):
         return self.get_children()[self.get_current_page()]

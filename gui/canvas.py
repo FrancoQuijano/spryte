@@ -58,6 +58,8 @@ class PixelMap(object):
             return (1, 1, 1, 0)
 
     def set_pixel_color(self, x, y, color):
+        # FIXME: Fijarse si x, y pertenecen a este pixelmap
+
         pixel = self.get_pixel_at(x, y)
         if pixel is None and color[Color.ALPHA] != 0:
             pixel = Pixel(x, y, color)
@@ -93,6 +95,139 @@ class PixelMap(object):
                 self.pixels.append(Pixel(x + 1, y + 1, color))
 
 
+
+class CanvasConfig:
+
+    DEFAULT_LAYOUT_SIZE = (16, 16)
+    DEFAULT_TOOL = ToolType.PEN
+    DEFAULT_TOOL_SIZE = 1
+    DEFAULT_PRIMARY_COLOR = Color.BLACK
+    DEFAULT_SECONDARY_COLOR = Color.WHITE
+    DEFAULT_ZOOM = 100
+    DEFAULT_PIXEL_SIZE = 20
+    DEFAULT_RESIZABLE = True
+    DEFAULT_EDITABLE = True
+
+    def __init__(self, layout_size=DEFAULT_LAYOUT_SIZE, tool=DEFAULT_TOOL,
+                 tool_size=DEFAULT_TOOL_SIZE,
+                 primary_color=DEFAULT_PRIMARY_COLOR,
+                 secondary_color=DEFAULT_SECONDARY_COLOR,
+                 zoom=DEFAULT_ZOOM, pixel_size=DEFAULT_PIXEL_SIZE,
+                 resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE):
+
+        self._layout_size = layout_size
+        self._tool = tool
+        self._tool_size = tool_size
+        self._primary_color = primary_color
+        self._secondary_color = secondary_color
+        self._zoom = zoom
+        self._pixel_size = pixel_size
+        self._resizable = resizable
+        self._editable = editable
+
+        self._callbacks = {}
+
+    def connect(self, property_name, callback):
+        property_name = property_name.replace("-", "_")
+        if not property_name in self._callbacks.keys():
+            self._callbacks[property_name] = []
+
+        self._callbacks[property_name].append(callback)
+
+    def emit(self, property_name):
+        property_name = property_name.replace("-", "_")
+        if property_name not in self._callbacks.keys():
+            return
+
+        value = None
+        if "_" + property_name in self.__dict__.keys():
+            value = self.__dict__["_" + property_name]
+
+        for callback in self._callbacks[property_name]:
+            callback(value)
+
+    @property
+    def layout_size(self):
+        return self._layout_size
+
+    @layout_size.setter
+    def layout_size(self, value):
+        self._layout_size = value
+        self.emit("layout-size")
+
+    @property
+    def tool(self):
+        return self._tool
+
+    @tool.setter
+    def tool(self, value):
+        self._tool = value
+        self.emit("tool")
+
+    @property
+    def tool_size(self):
+        return self._tool_size
+
+    @tool_size.setter
+    def tool_size(self, value):
+        self._tool_size = value
+        self.emit("tool-size")
+
+    @property
+    def primary_color(self):
+        return self._primary_color
+
+    @primary_color.setter
+    def primary_color(self, value):
+        self._primary_color = value
+        self.emit("primary-color")
+
+    @property
+    def secondary_color(self):
+        return self._secondary_color
+
+    @secondary_color.setter
+    def secondary_color(self, value):
+        self._secondary_color = value
+        self.emit("secondary-color")
+
+    @property
+    def zoom(self):
+        return self._zoom
+
+    @zoom.setter
+    def zoom(self, value):
+        self._zoom = value
+        self.emit("zoom")
+
+    @property
+    def pixel_size(self):
+        return self._pixel_size
+
+    @pixel_size.setter
+    def pixel_size(self, value):
+        self._pixel_size = value
+        self.emit("pixel-size")
+
+    @property
+    def resizable(self):
+        return self._resizable
+
+    @resizable.setter
+    def resizable(self, value):
+        self._resizable = value
+        self.emit("resizable")
+
+    @property
+    def editable(self):
+        return self._editable
+
+    @editable.setter
+    def editable(self, value):
+        self._editable = value
+        self.emit("editable")
+
+
 class Canvas(Gtk.DrawingArea):
 
     __gsignals__ = {
@@ -102,23 +237,19 @@ class Canvas(Gtk.DrawingArea):
         "size-changed": (GObject.SIGNAL_RUN_LAST, None, []),
     }
 
-    def __init__(self, pixel_size=5, zoom=100, sprite_width=48,
-                 sprite_height=48, editable=True):
+    def __init__(self, config=None, *args, **kargs):
         super(Canvas, self).__init__()
 
-        self.editable = True
-        self.resizable = True
+        if config is None:
+            self.config = CanvasConfig(*args, **kargs)
 
-        self.pixel_size = pixel_size
-        self.tool_size = 1
-        self.zoom = zoom
-        self.sprite_width = sprite_width
-        self.sprite_height = sprite_height
-        self.editable = editable
-        self.tool = ToolType.PEN
-        self.primary_color = (0, 0, 0, 1)
-        self.secondary_color = (1, 1, 1, 0)
-        self.pixelmap = PixelMap(sprite_width, sprite_height)
+        else:
+            self.config = config
+
+        self.config.connect("layout-size", self.set_layout_size)
+        self.config.connect("zoom", self._zoom_changed_cb)
+
+        self.pixelmap = PixelMap(*self.config.layout_size)
         self.file = None
         self.modified = False
 
@@ -133,7 +264,7 @@ class Canvas(Gtk.DrawingArea):
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
                         Gdk.EventMask.BUTTON_RELEASE_MASK)
 
-        if self.editable:
+        if self.config.editable:
             self.add_events(Gdk.EventMask.SCROLL_MASK |
                             Gdk.EventMask.POINTER_MOTION_MASK |
                             Gdk.EventMask.BUTTON_MOTION_MASK)
@@ -146,15 +277,17 @@ class Canvas(Gtk.DrawingArea):
         self.connect("draw", self._draw_cb)
 
     def resize(self):
-        if not self.resizable:
+        width, height = self.config.layout_size
+
+        if not self.config.resizable:
             alloc = self.get_allocation()
             m = min(alloc.width, alloc.height)
-            self.zoom = 100 * min(alloc.width / self.sprite_width, alloc.height / self.sprite_height)
+            self.config.zoom = 100 * min(alloc.width / width, alloc.height / height)
             return
 
-        factor = self.zoom / 100
-        width = self.pixel_size * self.sprite_width * factor
-        height = self.pixel_size * self.sprite_height * factor
+        factor = self.config.zoom / 100
+        width = self.config.pixel_size * width * factor
+        height = self.config.pixel_size * height * factor
         self.set_size_request(width, height)
 
         # No es necesario llamar self.redraw() a menos que
@@ -168,10 +301,10 @@ class Canvas(Gtk.DrawingArea):
             return False
 
         if event.direction == Gdk.ScrollDirection.UP:
-            self.zoom = min(2000, self.zoom + 10)
+            self.config.zoom = min(2000, self.config.zoom + 10)
 
         else:
-            self.zoom = max(1, self.zoom - 10)
+            self.config.zoom = max(1, self.config.zoom - 10)
 
         self.resize()
 
@@ -208,16 +341,16 @@ class Canvas(Gtk.DrawingArea):
             self._pressed_buttons.remove(button)
 
         if self._pending_tool is not None and self._pressed_buttons == []:
-            self.tool = self._pending_tool
+            self.config.tool = self._pending_tool
             self.redraw()
 
         self.emit("changed")
 
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
-        factor = self.zoom / 100
-        w = h = self.pixel_size * factor
-        margin = 1 if self.zoom >= 100 and self.editable else 0
+        factor = self.config.zoom / 100
+        w = h = self.config.pixel_size * factor
+        margin = 1 if self.config.zoom >= 100 and self.config.editable else 0
 
         self._draw_bg(ctx)
 
@@ -254,9 +387,9 @@ class Canvas(Gtk.DrawingArea):
 
         for x, y in self.get_selected_pixels():
             x, y = self.get_absolute_coords(x, y)
-            factor = self.zoom / 100
-            w = h = self.pixel_size * factor
-            margin = 1 if self.zoom >= 100 else 0
+            factor = self.config.zoom / 100
+            w = h = self.config.pixel_size * factor
+            margin = 1 if self.config.zoom >= 100 else 0
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
@@ -264,20 +397,28 @@ class Canvas(Gtk.DrawingArea):
         GLib.idle_add(self.queue_draw)
 
     def set_tool_size(self, size):
-        self.tool_size = size
-        self.redraw()
+        # self.config.tool_size = size
+        # self.redraw()
+        print("Implementar Canvas.set_tool_size")
 
     def set_layout_size(self, size):
-        width, height = size
-        for x in range(width + 1, self.sprite_width + 1):
-            for y in range(1, self.sprite_height + 1):
+        new_width, new_height = size
+        current_width, current_height = self.config.layout_size
+
+        for x in range(new_width + 1, current_width + 1):
+            for y in range(1, current_height + 1):
                 self.pixelmap.delete_pixel_at(x, y)
 
-        for x in range(1, width + 1):
-            for y in range(height + 1, self.sprite_height + 1):
+        for x in range(1, new_width + 1):
+            for y in range(new_height + 1, current_height + 1):
                 self.pixelmap.delete_pixel_at(x, y)
 
-        self.set_sprite_size(width, height)
+        self.set_sprite_size((new_width, new_height))
+
+    def set_sprite_size(self, size):
+        self.layout_size = size
+        self.pixelmap.width, self.pixelmap.height = self.layout_size
+        self.resize()
 
     def set_tool(self, tool):
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons or  \
@@ -286,33 +427,32 @@ class Canvas(Gtk.DrawingArea):
             self._pending_tool = tool
 
         else:
-            self.tool = tool
+            self.config.tool = tool
             self.redraw()
 
-    def set_zoom(self, zoom):
-        self.zoom = zoom
+    def _zoom_changed_cb(self, zoom):
         self.resize()
 
     def get_relative_coords(self, x, y):
-        factor = 1 / (self.pixel_size * self.zoom / 100)
+        factor = 1 / (self.config.pixel_size * self.config.zoom / 100)
         return int(x * factor) + 1, int(y * factor) + 1
 
     def get_absolute_coords(self, x, y):
-        factor = self.pixel_size * self.zoom / 100
+        factor = self.config.pixel_size * self.config.zoom / 100
         return factor * (x - 1), factor * (y - 1)
 
     def apply_tool(self, x, y, color=Color.PRIMARY):
         cairo_color = (0, 0, 0, 1)
         paint_selected_pixel = True
 
-        if ToolType.is_paint_tool(self.tool):
+        if ToolType.is_paint_tool(self.config.tool):
             if color == Color.PRIMARY:
-                cairo_color = self.primary_color
+                cairo_color = self.config.primary_color
 
             elif color == Color.SECONDARY:
-                cairo_color = self.secondary_color
+                cairo_color = self.config.secondary_color
 
-            if self.tool == ToolType.BUCKET:
+            if self.config.tool == ToolType.BUCKET:
                 paint_selected_pixel = False
                 current_pixel = self.get_selected_pixels()[0]
                 current_color = self.pixelmap.get_pixel_color(*current_pixel)
@@ -321,17 +461,17 @@ class Canvas(Gtk.DrawingArea):
                 self.pixelmap.set_pixel_color(x, y, cairo_color)
                 self.redraw()
 
-            elif self.tool == ToolType.SPECIAL_BUCKET:
+            elif self.config.tool == ToolType.SPECIAL_BUCKET:
                 paint_selected_pixel = False
                 selected_color = self.pixelmap.get_pixel_color(x, y)
                 PaintAlgorithms.replace(self.pixelmap, selected_color, cairo_color)
 
                 self.redraw()
 
-        elif self.tool == ToolType.ERASER:
+        elif self.config.tool == ToolType.ERASER:
             cairo_color = (1, 1, 1, 0)
 
-        elif self.tool == ToolType.COLOR_PICKER:
+        elif self.config.tool == ToolType.COLOR_PICKER:
             paint_selected_pixel = False
             cairo_color = self.pixelmap.get_pixel_color(x, y)
 
@@ -354,19 +494,19 @@ class Canvas(Gtk.DrawingArea):
             self.apply_tool(x, y, color)
 
     def set_primary_color(self, color):
-        self.primary_color = color
+        print("Canvas.set_primary_color")
 
     def set_secondary_color(self, color):
-        self.secondary_color = color
+        print("Canvas.set_secondary_color")
 
     def get_selected_pixels(self):
         x, y = self.get_relative_coords(*self._mouse_position)
         pixels = [(x, y)]
 
-        if not ToolType.is_resizable(self.tool):
+        if not ToolType.is_resizable(self.config.tool):
             return pixels
 
-        if self.tool_size >= 2:
+        if self.config.tool_size >= 2:
             # La X es donde está el mouse
             # ---------
             # | X | 1 |
@@ -377,7 +517,7 @@ class Canvas(Gtk.DrawingArea):
                            (x + 1, y + 1),  # 2
                            (x, y + 1)])     # 3
 
-        if self.tool_size >= 3:
+        if self.config.tool_size >= 3:
             # La X es donde está el mouse
             # -------------
             # | 4 | 5 | 6 |
@@ -392,7 +532,7 @@ class Canvas(Gtk.DrawingArea):
                            (x - 1, y),       # 7
                            (x - 1, y + 1)])  # 8
 
-        if self.tool_size == 4:
+        if self.config.tool_size == 4:
             # La X es donde está el mouse
             # -----------------
             # | 4 | 5 | 6 | 9 |
@@ -411,9 +551,9 @@ class Canvas(Gtk.DrawingArea):
                            (x + 1, y + 2),   # 14
                            (x + 2, y + 2)])  # 15
 
-        if self.tool == ToolType.VERTICAL_MIRROR_PEN:
+        if self.config.tool == ToolType.VERTICAL_MIRROR_PEN:
             for x, y in pixels:
-                mx = self.sprite_width - x + 1
+                mx = self.config.layout_size[0] - x + 1
                 if (mx, y) not in pixels:
                     pixels.append((mx, y))
 
@@ -433,28 +573,21 @@ class Canvas(Gtk.DrawingArea):
 
         if refresh:
             image = Image.open(filename)
-            self.sprite_width, self.sprite_height = image.size
+            self.config.layout_size = image.size
             self.pixelmap.load_data_from_image(image)
             self.resize()
 
             self.emit("size-changed")
             self.emit("changed")
 
-    def set_sprite_size(self, width, height):
-        self.sprite_width = width
-        self.sprite_height = height
-        self.pixelmap.width = width
-        self.pixelmap.height = height
-        self.resize()
-
     def get_sprite_size(self):
-        return (self.sprite_width, self.sprite_height)
+        return self.config.layout_size
 
     def set_editable(self, editable):
-        self.editable = editable
+        print("Implementar Canvas.set_editable")
 
     def get_editable(self):
-        return self.editable
+        return self.config.editable
 
     def set_resizable(self, resizable):
         self.resizable = resizable
@@ -475,8 +608,7 @@ class CanvasContainer(Gtk.Box):
         "size-changed": (GObject.SIGNAL_RUN_LAST, None, []),
     }
 
-    def __init__(self, pixel_size=25, zoom=100, sprite_width=48,
-                 sprite_height=48, editable=True):
+    def __init__(self, *args, **kargs):
         super(CanvasContainer, self).__init__()
 
         self.modified = False
@@ -493,7 +625,7 @@ class CanvasContainer(Gtk.Box):
         box2.set_orientation(Gtk.Orientation.VERTICAL)
         box1.pack_start(box2, True, False, 0)
 
-        self.canvas = Canvas(pixel_size, zoom, sprite_width, sprite_height, editable)
+        self.canvas = Canvas(*args, **kargs)
         self.canvas.connect("changed", self._changed_cb)
         self.canvas.connect("size-changed", self._size_changed_cb)
         self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
@@ -512,24 +644,6 @@ class CanvasContainer(Gtk.Box):
     def _secondary_color_picked_cb(self, canvas, color):
         self.emit("secondary-color-picked", color)
 
-    def set_tool_size(self, size):
-        self.canvas.set_tool_size(size)
-
-    def set_layout_size(self, size):
-        self.canvas.set_layout_size(size)
-
-    def set_tool(self, tool):
-        self.canvas.set_tool(tool)
-
-    def set_zoom(self, zoom):
-        self.canvas.set_zoom(zoom)
-
-    def set_primary_color(self, color):
-        self.canvas.set_primary_color(color)
-
-    def set_secondary_color(self, color):
-        self.canvas.set_secondary_color(color)
-
     def get_pixelmap(self):
         return self.canvas.get_pixelmap()
 
@@ -539,23 +653,8 @@ class CanvasContainer(Gtk.Box):
     def set_file(self, filename, refresh=True):
         self.canvas.set_file(filename, refresh=refresh)
 
-    def set_sprite_size(self, width, height):
-        self.canvas.set_sprite_size(width, height)
-
-    def get_sprite_size(self):
-        return self.canvas.get_sprite_size()
-
-    def set_editable(self, editable):
-        self.canvas.set_editable(editable)
-
-    def get_editable(self):
-        return self.canvas.get_editable()
-
-    def set_resizable(self, resizable):
-        self.canvas.set_resizable(resizable)
-
-    def get_resizable(self):
-        return self.canvas.get_resizable()
-
     def get_file(self):
         return self.canvas.get_file()
+
+    def get_config(self):
+        return self.canvas.config

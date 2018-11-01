@@ -22,6 +22,10 @@ class Color:
     BLUE = 2
     ALPHA = 3
 
+    BLACK = (0, 0, 0, 1)
+    WHITE = (1, 1, 1, 1)
+    TRANSPARENT = (0, 0, 0, 0)
+
     @classmethod
     def gdk_to_cairo(self, color, alpha=65535):
         return (color.red / 65535,
