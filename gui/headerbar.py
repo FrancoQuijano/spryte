@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from .canvas import CanvasConfig
+
 from gi.repository import Gtk
 from gi.repository import GObject
 
@@ -74,8 +76,10 @@ class HeaderBar(Gtk.HeaderBar):
         label = Gtk.Label.new("Ancho:")
         row.pack_start(label, False, False, 0)
 
+        default_width, default_height = CanvasConfig.DEFAULT_LAYOUT_SIZE
+
         width_spinner = Gtk.SpinButton.new_with_range(1, 1024, 1)
-        width_spinner.set_value(64)
+        width_spinner.set_value(default_width)
         row.pack_end(width_spinner, False, False, 0)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -85,7 +89,7 @@ class HeaderBar(Gtk.HeaderBar):
         row.pack_start(label, False, False, 0)
 
         height_spinner = Gtk.SpinButton.new_with_range(1, 1024, 1)
-        height_spinner.set_value(64)
+        height_spinner.set_value(default_height)
         row.pack_end(height_spinner, False, False, 0)
 
         width_spinner.connect("value-changed", self._layout_size_changed, width_spinner, height_spinner)
