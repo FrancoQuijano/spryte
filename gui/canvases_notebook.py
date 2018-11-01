@@ -12,6 +12,9 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 
+TAB_CANVAS_CONFIG = None
+
+
 class CanvasNotebookTab(Gtk.Box):
 
     __gsignals__ = {
@@ -38,9 +41,21 @@ class CanvasNotebookTab(Gtk.Box):
         self.overlay.connect("leave-notify-event", self._leave_cb)
         self.pack_start(self.overlay, True, True, 0)
 
-        self.canvas = Canvas(pixel_size=1, zoom=300,
-                             layout_size=self._associated.canvas.config.layout_size,
-                             editable=False)
+        # FIXME: El tamaño del canvas de los tabs debería ser fijo, siempre
+        # Si cierro el programa y lo abro con algún proyecto a medias,
+        # probablemente el tamaño de las pestañas cambie, el siguiente código
+        # solo previene que un tab nuevo tenga un tamaño diferente (al haber
+        # cambiado el tamaño del canvas antes de que se cree este tab.
+        global TAB_CANVAS_CONFIG
+        if TAB_CANVAS_CONFIG is None:
+            self.canvas = Canvas(pixel_size=2, zoom=300,
+                                 layout_size=self._associated.canvas.config.layout_size,
+                                 editable=False)
+
+            TAB_CANVAS_CONFIG = self.canvas.config
+
+        else:
+            self.canvas = Canvas(config=TAB_CANVAS_CONFIG)
 
         self.canvas.set_resizable(False)
         self.overlay.add(self.canvas)
