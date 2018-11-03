@@ -286,6 +286,75 @@ class PaintAlgorithms:
                 if pixelmap.get_pixel_color(x, y) == current_color:
                     pixelmap.set_pixel_color(x, y, new_color)
 
+    @classmethod
+    def line(self, pixelmap, x0, y0, x1, y1, color):
+        """
+        Algorítmo basado en el pseudocódigo de:
+        https://es.wikipedia.org/wiki/Algoritmo_de_Bresenham#Descripci%C3%B3n
+        """
+
+        if x0 != x1:
+            delta_y = (y1 - y0)
+            delta_x = (x1 - x0)
+
+            if delta_y >= 0:
+                inclinacion_y_i = 1
+
+            else:
+                delta_y = - delta_y
+                inclinacion_y_i = -1
+
+            if delta_x >= 0:
+                inclinacion_x_i = 1
+
+            else:
+                delta_x = -delta_x
+                inclinacion_x_i = -1
+
+            if delta_x >= delta_y:
+                avance_y_recto = 0
+                avance_x_recto = inclinacion_x_i
+
+            else:
+                avance_x_recto = 0
+                avance_y_recto = inclinacion_y_i
+
+                k = delta_x
+                delta_x = delta_y
+                delta_y = k
+
+            x = x0
+            y = y0
+
+            avR = (2 * delta_y)
+            av = (avR - delta_x)
+            avI = (av - delta_x)
+
+            while x != x1:
+                pixelmap.set_temp_pixel_color(x, y, color)
+
+                if av >= 0:
+                    x += inclinacion_x_i
+                    y += inclinacion_y_i
+                    av += avI
+
+                else:
+                    x += avance_x_recto
+                    y += avance_y_recto
+                    av += avR
+
+            if y != y1:
+                # En algunas situaciones no se pintan los píxeles en la
+                # columna del pixel final
+                for _y in range(min(y, y1), max(y, y1) + 1):
+                    pixelmap.set_temp_pixel_color(x, _y, color)
+
+            # El último pixel siempre se pinta
+            pixelmap.set_temp_pixel_color(x1, y1, color)
+
+        else:
+            for y in range(min(y0, y1), max(y0, y1) + 1):
+                pixelmap.set_temp_pixel_color(x0, y, color)
 
 def gtk_version_newer_than(major=3, minor=0, micro=0):
     _major = Gtk.get_major_version()

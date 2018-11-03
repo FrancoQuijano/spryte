@@ -31,6 +31,7 @@ class PixelMap(object):
         self.__index = 0
         self.__reset = False
         self.pixels = []
+        self.temp_pixels = []
 
     def __iter__(self):
         return self
@@ -44,6 +45,13 @@ class PixelMap(object):
 
     def get_pixel_at(self, x, y):
         for pixel in self.pixels:
+            if pixel.x == x and pixel.y == y:
+                return pixel
+
+        return None
+
+    def get_temp_pixel_at(self, x, y):
+        for pixel in self.temp_pixels:
             if pixel.x == x and pixel.y == y:
                 return pixel
 
@@ -71,13 +79,42 @@ class PixelMap(object):
         elif color[Color.ALPHA] == 0:
             self.delete_pixel_at(x, y)
 
+    def set_temp_pixel_color(self, x, y, color):
+        pixel = self.get_temp_pixel_at(x, y)
+        if pixel is None and color[Color.ALPHA] != 0:
+            pixel = Pixel(x, y, color)
+            self.temp_pixels.append(pixel)
+
+        elif color[Color.ALPHA] != 0:
+            pixel.color = color
+
+        elif color[Color.ALPHA] == 0:
+            self.delete_temp_pixel_at(x, y)
+
     def delete_pixel_at(self, x, y):
-        i = 0
         for pixel in self.pixels:
             if pixel.x == x and pixel.y == y:
-                del self.pixels[i]
+                del self.pixels[self.pixels.index(pixel)]
+                break
 
-            i += 1
+    def delete_temp_pixel(self, pixel):
+        del self.temp_pixels[self.temp_pixels.index(pixel)]
+
+    def delete_temp_pixel_at(self, x, y):
+        for pixel in self.temp_pixels:
+            if pixel.x == x and pixel.y == y:
+                self.delete_temp_pixel(pixel)
+                break
+
+    def delete_temp_pixels(self):
+        while len(self.temp_pixels) > 0:
+            self.delete_temp_pixel(self.temp_pixels[0])
+
+    def untemp_pixels(self):
+        for pixel in self.temp_pixels:
+            self.set_pixel_color(pixel.x, pixel.y, pixel.color)
+
+        self.delete_temp_pixels()
 
     def load_data_from_image(self, image):
         self.pixels = []
@@ -256,6 +293,7 @@ class Canvas(Gtk.DrawingArea):
         self._pending_tool = None
         self._pressed_buttons = []
         self._mouse_position = (-1, -1)
+        self._click_mouse_position = (None, None)
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -324,6 +362,10 @@ class Canvas(Gtk.DrawingArea):
 
     def _button_press_cb(self, canvas, event):
         button = event.get_button()[1]
+        if button == Gdk.BUTTON_MIDDLE:
+            return
+
+        self._click_mouse_position = (event.x, event.y)
 
         if button not in self._pressed_buttons:
             self._pressed_buttons.append(button)
@@ -336,6 +378,8 @@ class Canvas(Gtk.DrawingArea):
 
     def _button_release_cb(self, canvas, event):
         button = event.get_button()[1]
+        if button == Gdk.BUTTON_MIDDLE:
+            return
 
         if button in self._pressed_buttons:
             self._pressed_buttons.remove(button)
@@ -346,6 +390,9 @@ class Canvas(Gtk.DrawingArea):
 
         self.emit("changed")
 
+        self._click_mouse_position = (None, None)
+        self.pixelmap.untemp_pixels()
+
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
         factor = self.config.zoom / 100
@@ -354,7 +401,7 @@ class Canvas(Gtk.DrawingArea):
 
         self._draw_bg(ctx)
 
-        for pixel in self.pixelmap.pixels:
+        for pixel in self.pixelmap.pixels + self.pixelmap.temp_pixels:
             x, y = self.get_absolute_coords(pixel.x, pixel.y)
 
             ctx.set_source_rgba(*pixel.color)
@@ -467,6 +514,13 @@ class Canvas(Gtk.DrawingArea):
                 PaintAlgorithms.replace(self.pixelmap, selected_color, cairo_color)
 
                 self.redraw()
+
+            elif self.config.tool == ToolType.STROKE:
+                paint_selected_pixel = False
+                self.pixelmap.delete_temp_pixels()
+                x0, y0 = self.get_relative_coords(*self._click_mouse_position)
+                x1, y1 = self.get_relative_coords(*self._mouse_position)
+                PaintAlgorithms.line(self.pixelmap, x0, y0, x1, y1, cairo_color)
 
         elif self.config.tool == ToolType.ERASER:
             cairo_color = (1, 1, 1, 0)
