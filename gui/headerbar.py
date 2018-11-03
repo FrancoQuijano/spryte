@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .canvas import CanvasConfig
+from .utils import gtk_version_newer_than
 
 from gi.repository import Gtk
 from gi.repository import GObject
@@ -33,7 +34,12 @@ class HeaderBar(Gtk.HeaderBar):
     def _options_button_toggled_cb(self, button):
         if self.options_button.get_active():
             self.options_popover.show_all()
-            self.options_popover.popup()
+
+            if gtk_version_newer_than(3, 22):
+                self.options_popover.popup()
+
+            else:
+                self.options_popover.show_now()
 
     def _options_popover_closed_cb(self, popover):
         self.options_button.set_active(False)

@@ -285,3 +285,14 @@ class PaintAlgorithms:
             for y in range(1, pixelmap.height + 1):
                 if pixelmap.get_pixel_color(x, y) == current_color:
                     pixelmap.set_pixel_color(x, y, new_color)
+
+
+def gtk_version_newer_than(major=3, minor=0, micro=0):
+    _major = Gtk.get_major_version()
+    _minor = Gtk.get_minor_version()
+    _micro = Gtk.get_micro_version()
+
+    return (_major > major) or \
+           (_major == major and _minor > minor) or \
+           (_major == major and _minor == minor and _micro >= micro)
+
