@@ -140,8 +140,7 @@ class CanvasConfig:
     DEFAULT_TOOL_SIZE = 1
     DEFAULT_PRIMARY_COLOR = Color.BLACK
     DEFAULT_SECONDARY_COLOR = Color.WHITE
-    DEFAULT_ZOOM = 100
-    DEFAULT_PIXEL_SIZE = 20
+    DEFAULT_ZOOM = 2000
     DEFAULT_SHOW_GRID = False
     DEFAULT_RESIZABLE = True
     DEFAULT_EDITABLE = True
@@ -150,9 +149,8 @@ class CanvasConfig:
                  tool_size=DEFAULT_TOOL_SIZE,
                  primary_color=DEFAULT_PRIMARY_COLOR,
                  secondary_color=DEFAULT_SECONDARY_COLOR,
-                 zoom=DEFAULT_ZOOM, pixel_size=DEFAULT_PIXEL_SIZE,
-                 show_grid=DEFAULT_SHOW_GRID, resizable=DEFAULT_RESIZABLE,
-                 editable=DEFAULT_EDITABLE):
+                 zoom=DEFAULT_ZOOM, show_grid=DEFAULT_SHOW_GRID,
+                 resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE):
 
         self._layout_size = layout_size
         self._tool = tool
@@ -160,7 +158,6 @@ class CanvasConfig:
         self._primary_color = primary_color
         self._secondary_color = secondary_color
         self._zoom = zoom
-        self._pixel_size = pixel_size
         self._show_grid = show_grid
         self._resizable = resizable
         self._editable = editable
@@ -239,15 +236,6 @@ class CanvasConfig:
     def zoom(self, value):
         self._zoom = value
         self.emit("zoom")
-
-    @property
-    def pixel_size(self):
-        return self._pixel_size
-
-    @pixel_size.setter
-    def pixel_size(self, value):
-        self._pixel_size = value
-        self.emit("pixel-size")
 
     @property
     def show_grid(self):
@@ -336,9 +324,8 @@ class Canvas(Gtk.DrawingArea):
             self.config.zoom = 100 * min(alloc.width / width, alloc.height / height)
             return
 
-        factor = self.config.zoom / 100
-        width = self.config.pixel_size * width * factor
-        height = self.config.pixel_size * height * factor
+        width = width * self.config.zoom / 100
+        height = height * self.config.zoom / 100
         self.set_size_request(width, height)
 
         # No es necesario llamar self.redraw() a menos que
@@ -416,8 +403,7 @@ class Canvas(Gtk.DrawingArea):
 
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
-        factor = self.config.zoom / 100
-        w = h = self.config.pixel_size * factor
+        w = h = self.config.zoom / 100
 
         if self.config.show_grid and self.config.zoom >= 150 and self.config.editable:
             margin = 0.5
@@ -460,8 +446,7 @@ class Canvas(Gtk.DrawingArea):
 
         for x, y in self._selected_pixels:
             x, y = self.get_absolute_coords(x, y)
-            factor = self.config.zoom / 100
-            w = h = self.config.pixel_size * factor
+            w = h = self.config.zoom / 100
             margin = 1 if self.config.zoom >= 100 else 0
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
@@ -507,11 +492,11 @@ class Canvas(Gtk.DrawingArea):
         self.resize()
 
     def get_relative_coords(self, x, y):
-        factor = 1 / (self.config.pixel_size * self.config.zoom / 100)
+        factor = 100 / self.config.zoom
         return int(x * factor) + 1, int(y * factor) + 1
 
     def get_absolute_coords(self, x, y):
-        factor = self.config.pixel_size * self.config.zoom / 100
+        factor = self.config.zoom / 100
         return factor * (x - 1), factor * (y - 1)
 
     def apply_tool(self, x, y, color=Color.PRIMARY):

@@ -48,7 +48,7 @@ class CanvasNotebookTab(Gtk.Box):
         # cambiado el tamaño del canvas antes de que se cree este tab.
         global TAB_CANVAS_CONFIG
         if TAB_CANVAS_CONFIG is None:
-            self.canvas = Canvas(pixel_size=2, zoom=300,
+            self.canvas = Canvas(zoom=500,
                                  layout_size=self._associated.canvas.config.layout_size,
                                  editable=False)
 

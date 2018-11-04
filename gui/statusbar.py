@@ -50,7 +50,7 @@ class Statusbar(Gtk.Box):
     def __init__(self):
         super().__init__()
 
-        marks = [50, 100, 200, 500, 1000, 1500, 2000]
+        marks = [50, 100, 200, 500, 1000, 1500, 2000, 3000, 5000]
         self.zoombar = DiscreteScale(marks)
         self.zoombar.set_draw_value(False)
         self.zoombar.set_size_request(150, 0)
