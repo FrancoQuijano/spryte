@@ -142,6 +142,7 @@ class CanvasConfig:
     DEFAULT_SECONDARY_COLOR = Color.WHITE
     DEFAULT_ZOOM = 100
     DEFAULT_PIXEL_SIZE = 20
+    DEFAULT_SHOW_GRID = False
     DEFAULT_RESIZABLE = True
     DEFAULT_EDITABLE = True
 
@@ -150,7 +151,8 @@ class CanvasConfig:
                  primary_color=DEFAULT_PRIMARY_COLOR,
                  secondary_color=DEFAULT_SECONDARY_COLOR,
                  zoom=DEFAULT_ZOOM, pixel_size=DEFAULT_PIXEL_SIZE,
-                 resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE):
+                 show_grid=DEFAULT_SHOW_GRID, resizable=DEFAULT_RESIZABLE,
+                 editable=DEFAULT_EDITABLE):
 
         self._layout_size = layout_size
         self._tool = tool
@@ -159,6 +161,7 @@ class CanvasConfig:
         self._secondary_color = secondary_color
         self._zoom = zoom
         self._pixel_size = pixel_size
+        self._show_grid = show_grid
         self._resizable = resizable
         self._editable = editable
 
@@ -245,6 +248,15 @@ class CanvasConfig:
     def pixel_size(self, value):
         self._pixel_size = value
         self.emit("pixel-size")
+
+    @property
+    def show_grid(self):
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, value):
+        self._show_grid = value
+        self.emit("show-grid")
 
     @property
     def resizable(self):
@@ -406,7 +418,12 @@ class Canvas(Gtk.DrawingArea):
         alloc = self.get_allocation()
         factor = self.config.zoom / 100
         w = h = self.config.pixel_size * factor
-        margin = 1 if self.config.zoom >= 100 and self.config.editable else 0
+
+        if self.config.show_grid and self.config.zoom >= 150 and self.config.editable:
+            margin = 0.5
+
+        else:
+            margin = 0
 
         self._draw_bg(ctx)
 
