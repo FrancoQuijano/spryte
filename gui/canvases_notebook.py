@@ -242,3 +242,9 @@ class CanvasesNotebook(Gtk.Notebook):
             pixelmaps.append(canvas.get_pixelmap())
 
         return pixelmaps
+
+    def undo(self):
+        self.get_current_canvas().undo()
+
+    def redo(self):
+        self.get_current_canvas().redo()

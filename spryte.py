@@ -30,10 +30,15 @@ class SpryteApp(Gtk.Application):
 
     def _create_actions(self):
         actions = [
+            # File
             ("new_file",  "app.new_file",  ["<Primary>N"], self.new_file),
             ("open_file", "app.open_file", ["<Primary>O"], self.open),
             ("save",      "app.save",      ["<Primary>S"], self.save),
             ("save_as",   "app.save_as",   ["<Primary><Shift>S"], self.save_as),
+
+            # Edit
+            ("undo", "app.undo", ["<Primary>Z"], self.undo),
+            ("redo", "app.redo", ["<Primary><Shift>Z", "<Primary>Y"], self.redo),
         ]
 
         for name, detailed_name, accesls, callback in actions:
@@ -82,6 +87,12 @@ class SpryteApp(Gtk.Application):
 
     def save_as(self, action, param):
         self.get_current_window().save_as()
+
+    def undo(self, action, param):
+        self.get_current_window().undo()
+
+    def redo(self, action, param):
+        self.get_current_window().redo()
 
 
 class SpryteWindow(Gtk.ApplicationWindow):
@@ -174,6 +185,12 @@ class SpryteWindow(Gtk.ApplicationWindow):
             pixelmaps = self.canvases_notebook.get_pixelmaps()
             FileManagement.save(pixelmaps, file)
             self.canvases_notebook.set_file(file, refresh=False)
+
+    def undo(self):
+        self.canvases_notebook.undo()
+
+    def redo(self):
+        self.canvases_notebook.redo()
 
 
 if __name__ == "__main__":

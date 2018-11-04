@@ -260,20 +260,20 @@ class PaintAlgorithms:
         if current_color == new_color:
             return
 
-        if x > 1 and pixelmap.get_pixel_color(x - 1, y) == current_color:
-            pixelmap.set_pixel_color(x - 1, y, new_color)
+        if x > 1 and pixelmap.get_pixel_color(x - 1, y) == current_color and pixelmap.get_temp_pixel_color(x - 1, y) == Color.TRANSPARENT:
+            pixelmap.set_temp_pixel_color(x - 1, y, new_color)
             self.flood_fill(pixelmap, x - 1, y, current_color, new_color)
 
-        if x < pixelmap.width and pixelmap.get_pixel_color(x + 1, y) == current_color:
-            pixelmap.set_pixel_color(x + 1, y, new_color)
+        if x < pixelmap.width and pixelmap.get_pixel_color(x + 1, y) == current_color and pixelmap.get_temp_pixel_color(x + 1, y) == Color.TRANSPARENT:
+            pixelmap.set_temp_pixel_color(x + 1, y, new_color)
             self.flood_fill(pixelmap, x + 1, y, current_color, new_color)
 
-        if y > 1 and pixelmap.get_pixel_color(x, y - 1) == current_color:
-            pixelmap.set_pixel_color(x, y - 1, new_color)
+        if y > 1 and pixelmap.get_pixel_color(x, y - 1) == current_color and pixelmap.get_temp_pixel_color(x, y - 1) == Color.TRANSPARENT:
+            pixelmap.set_temp_pixel_color(x, y - 1, new_color)
             self.flood_fill(pixelmap, x, y - 1, current_color, new_color)
 
-        if y < pixelmap.height and  pixelmap.get_pixel_color(x, y + 1) == current_color:
-            pixelmap.set_pixel_color(x, y + 1, new_color)
+        if y < pixelmap.height and  pixelmap.get_pixel_color(x, y + 1) == current_color and pixelmap.get_temp_pixel_color(x, y + 1) == Color.TRANSPARENT:
+            pixelmap.set_temp_pixel_color(x, y + 1, new_color)
             self.flood_fill(pixelmap, x, y + 1, current_color, new_color)
 
     @classmethod
@@ -281,10 +281,9 @@ class PaintAlgorithms:
         if current_color == new_color:
             return
 
-        for x in range(1, pixelmap.width + 1):
-            for y in range(1, pixelmap.height + 1):
-                if pixelmap.get_pixel_color(x, y) == current_color:
-                    pixelmap.set_pixel_color(x, y, new_color)
+        for pixel in pixelmap.pixels:
+            if pixelmap.get_pixel_color(pixel.x, pixel.y) == current_color:
+                pixelmap.set_temp_pixel_color(pixel.x, pixel.y, new_color)
 
     @classmethod
     def line(self, pixelmap, x0, y0, x1, y1, color):

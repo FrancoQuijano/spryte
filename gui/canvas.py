@@ -28,8 +28,6 @@ class PixelMap(object):
         self.width = width
         self.height = height
 
-        self.__index = 0
-        self.__reset = False
         self.pixels = []
         self.temp_pixels = []
 
@@ -63,7 +61,7 @@ class PixelMap(object):
             return pixel.color
 
         else:
-            return (1, 1, 1, 0)
+            return Color.TRANSPARENT
 
     def set_pixel_color(self, x, y, color):
         # FIXME: Fijarse si x, y pertenecen a este pixelmap
@@ -78,6 +76,14 @@ class PixelMap(object):
 
         elif color[Color.ALPHA] == 0:
             self.delete_pixel_at(x, y)
+
+    def get_temp_pixel_color(self, x, y):
+        pixel = self.get_temp_pixel_at(x, y)
+        if pixel is not None:
+            return pixel.color
+
+        else:
+            return Color.TRANSPARENT
 
     def set_temp_pixel_color(self, x, y, color):
         pixel = self.get_temp_pixel_at(x, y)
@@ -130,7 +136,6 @@ class PixelMap(object):
 
                 color = Color.rgba_to_cairo((r, g, b, a))
                 self.pixels.append(Pixel(x + 1, y + 1, color))
-
 
 
 class CanvasConfig:
@@ -295,6 +300,7 @@ class Canvas(Gtk.DrawingArea):
         self._mouse_position = (-1, -1)
         self._click_mouse_position = (None, None)
         self._selected_pixels = []
+        self._history = [self.pixelmap]
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -320,7 +326,6 @@ class Canvas(Gtk.DrawingArea):
 
         if not self.config.resizable:
             alloc = self.get_allocation()
-            m = min(alloc.width, alloc.height)
             self.config.zoom = 100 * min(alloc.width / width, alloc.height / height)
             return
 
@@ -339,10 +344,10 @@ class Canvas(Gtk.DrawingArea):
             return False
 
         if event.direction == Gdk.ScrollDirection.UP:
-            self.config.zoom = min(2000, self.config.zoom + 10)
+            self.config.zoom = min(5000, self.config.zoom + 50)
 
         else:
-            self.config.zoom = max(1, self.config.zoom - 10)
+            self.config.zoom = max(1, self.config.zoom - 50)
 
         self.resize()
 
@@ -357,7 +362,9 @@ class Canvas(Gtk.DrawingArea):
             self.redraw()
             return
 
-        self.pixelmap.delete_temp_pixels()
+        if self.config.tool in [ToolType.STROKE]:
+            self.pixelmap.delete_temp_pixels()
+
         self._selected_pixels = selected_pixels
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
@@ -396,10 +403,20 @@ class Canvas(Gtk.DrawingArea):
             self.config.tool = self._pending_tool
             self.redraw()
 
-        self.emit("changed")
-
         self._click_mouse_position = (None, None)
-        self.pixelmap.untemp_pixels()
+
+        self._history = self._history[:self._history.index(self.pixelmap) + 1]
+        prev = self.pixelmap
+        self.pixelmap = PixelMap(self.pixelmap.width, self.pixelmap.height)
+
+        for pixel in prev.pixels + prev.temp_pixels:
+            self.pixelmap.set_pixel_color(pixel.x, pixel.y, pixel.color)
+
+        self._history.append(self.pixelmap)
+
+        prev.delete_temp_pixels()
+
+        self.emit("changed")
 
     def _draw_cb(self, canvas, ctx):
         alloc = self.get_allocation()
@@ -501,7 +518,6 @@ class Canvas(Gtk.DrawingArea):
 
     def apply_tool(self, x, y, color=Color.PRIMARY):
         cairo_color = (0, 0, 0, 1)
-        paint_selected_pixel = True
 
         if ToolType.is_paint_tool(self.config.tool):
             if color == Color.PRIMARY:
@@ -510,24 +526,26 @@ class Canvas(Gtk.DrawingArea):
             elif color == Color.SECONDARY:
                 cairo_color = self.config.secondary_color
 
+            if self.config.tool == ToolType.PEN:
+                self.pixelmap.set_temp_pixel_color(x, y, cairo_color)
+                self.redraw()
+
             if self.config.tool == ToolType.BUCKET:
-                paint_selected_pixel = False
                 current_pixel = self._selected_pixels[0]
                 current_color = self.pixelmap.get_pixel_color(*current_pixel)
+                self.pixelmap.set_temp_pixel_color(x, y, cairo_color)
                 PaintAlgorithms.flood_fill(self.pixelmap, x, y, current_color, cairo_color)
 
-                self.pixelmap.set_pixel_color(x, y, cairo_color)
                 self.redraw()
 
             elif self.config.tool == ToolType.SPECIAL_BUCKET:
-                paint_selected_pixel = False
-                selected_color = self.pixelmap.get_pixel_color(x, y)
-                PaintAlgorithms.replace(self.pixelmap, selected_color, cairo_color)
+                current_pixel = self._selected_pixels[0]
+                current_color = self.pixelmap.get_pixel_color(*current_pixel)
+                PaintAlgorithms.replace(self.pixelmap, current_color, cairo_color)
 
                 self.redraw()
 
             elif self.config.tool == ToolType.STROKE:
-                paint_selected_pixel = False
                 start_points, end_points = self._get_useful_pixels_for_stroke()
 
                 for i in range(0, len(start_points)):
@@ -537,10 +555,10 @@ class Canvas(Gtk.DrawingArea):
                     PaintAlgorithms.line(self.pixelmap, x0, y0, x1, y1, cairo_color)
 
         elif self.config.tool == ToolType.ERASER:
-            cairo_color = (1, 1, 1, 0)
+            self.pixelmap.set_temp_pixel_color(x, y, Color.TRANSPARENT)
+            self.redraw()
 
         elif self.config.tool == ToolType.COLOR_PICKER:
-            paint_selected_pixel = False
             cairo_color = self.pixelmap.get_pixel_color(x, y)
 
             if color == Color.PRIMARY:
@@ -548,10 +566,6 @@ class Canvas(Gtk.DrawingArea):
 
             elif color == Color.SECONDARY:
                 self.emit("secondary-color-picked", cairo_color)
-
-        if paint_selected_pixel:
-            self.pixelmap.set_pixel_color(x, y, cairo_color)
-            self.redraw()
 
     def apply_tool_to_absolute_coords(self, x, y, color=Color.PRIMARY):
         x, y = self.get_relative_coords(x, y)
@@ -664,6 +678,22 @@ class Canvas(Gtk.DrawingArea):
 
     def get_file(self):
         return self.file
+
+    def undo(self):
+        index = self._history.index(self.pixelmap)
+        if index > 0:
+            self.pixelmap = self._history[index - 1]
+            self.redraw()
+
+            self.emit("changed")
+
+    def redo(self):
+        index = self._history.index(self.pixelmap)
+        if index < len(self._history) - 1:
+            self.pixelmap = self._history[index + 1]
+            self.redraw()
+
+            self.emit("changed")
 
     def _get_useful_pixels_for_stroke(self):
         """
@@ -945,3 +975,9 @@ class CanvasContainer(Gtk.Box):
 
     def get_config(self):
         return self.canvas.config
+
+    def undo(self):
+        self.canvas.undo()
+
+    def redo(self):
+        self.canvas.redo()
