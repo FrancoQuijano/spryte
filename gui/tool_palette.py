@@ -44,7 +44,7 @@ class ToolPalette(Gtk.Grid):
             Tool("Color Picker",        position=(0, 7), tool_type=ToolType.COLOR_PICKER),
 
             Tool("Vertical mirror pen", position=(1, 0), tool_type=ToolType.VERTICAL_MIRROR_PEN),
-            Tool("SPECIAL_BUCKET",      position=(1, 1), tool_type=ToolType.SPECIAL_BUCKET),
+            Tool("Replace color",       position=(1, 1), tool_type=ToolType.SPECIAL_BUCKET),
             Tool("Stroke",              position=(1, 2), tool_type=ToolType.STROKE),
             Tool("Circle",              position=(1, 3), tool_type=ToolType.CIRCLE),
             Tool("Shape selection",     position=(1, 4), tool_type=ToolType.SHAPE_SELECTION),

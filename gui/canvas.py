@@ -294,6 +294,7 @@ class Canvas(Gtk.DrawingArea):
         self._pressed_buttons = []
         self._mouse_position = (-1, -1)
         self._click_mouse_position = (None, None)
+        self._selected_pixels = []
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -351,6 +352,14 @@ class Canvas(Gtk.DrawingArea):
 
     def _button_motion_cb(self, canvas, event):
         self._mouse_position = (event.x, event.y)
+
+        selected_pixels = self.get_selected_pixels()
+        if selected_pixels == self._selected_pixels:
+            self.redraw()
+            return
+
+        self.pixelmap.delete_temp_pixels()
+        self._selected_pixels = selected_pixels
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
             self.apply_tool_to_selected_pixels(color=Color.PRIMARY)
@@ -432,7 +441,7 @@ class Canvas(Gtk.DrawingArea):
     def _draw_selected_pixels(self, ctx):
         ctx.set_source_rgba(1, 1, 1, 0.2)
 
-        for x, y in self.get_selected_pixels():
+        for x, y in self._selected_pixels:
             x, y = self.get_absolute_coords(x, y)
             factor = self.config.zoom / 100
             w = h = self.config.pixel_size * factor
@@ -501,7 +510,7 @@ class Canvas(Gtk.DrawingArea):
 
             if self.config.tool == ToolType.BUCKET:
                 paint_selected_pixel = False
-                current_pixel = self.get_selected_pixels()[0]
+                current_pixel = self._selected_pixels[0]
                 current_color = self.pixelmap.get_pixel_color(*current_pixel)
                 PaintAlgorithms.flood_fill(self.pixelmap, x, y, current_color, cairo_color)
 
@@ -517,10 +526,13 @@ class Canvas(Gtk.DrawingArea):
 
             elif self.config.tool == ToolType.STROKE:
                 paint_selected_pixel = False
-                self.pixelmap.delete_temp_pixels()
-                x0, y0 = self.get_relative_coords(*self._click_mouse_position)
-                x1, y1 = self.get_relative_coords(*self._mouse_position)
-                PaintAlgorithms.line(self.pixelmap, x0, y0, x1, y1, cairo_color)
+                start_points, end_points = self._get_useful_pixels_for_stroke()
+
+                for i in range(0, len(start_points)):
+                    x0, y0 = start_points[i]
+                    x1, y1 = end_points[i]
+
+                    PaintAlgorithms.line(self.pixelmap, x0, y0, x1, y1, cairo_color)
 
         elif self.config.tool == ToolType.ERASER:
             cairo_color = (1, 1, 1, 0)
@@ -544,17 +556,16 @@ class Canvas(Gtk.DrawingArea):
         self.apply_tool(x, y, color)
 
     def apply_tool_to_selected_pixels(self, color=Color.PRIMARY):
-        for x, y in self.get_selected_pixels():
+        for x, y in self._selected_pixels:
             self.apply_tool(x, y, color)
 
-    def set_primary_color(self, color):
-        print("Canvas.set_primary_color")
+    def get_selected_pixels(self, start=None):
+        if start is None:
+            x, y = self.get_relative_coords(*self._mouse_position)
 
-    def set_secondary_color(self, color):
-        print("Canvas.set_secondary_color")
+        else:
+            x, y = self.get_relative_coords(*start)
 
-    def get_selected_pixels(self):
-        x, y = self.get_relative_coords(*self._mouse_position)
         pixels = [(x, y)]
 
         if not ToolType.is_resizable(self.config.tool):
@@ -651,6 +662,226 @@ class Canvas(Gtk.DrawingArea):
 
     def get_file(self):
         return self.file
+
+    def _get_useful_pixels_for_stroke(self):
+        """
+        Devuelve la mínima cantidad de píxeles necesarios
+        para aplicar la herramienta stroke (cuando self.config.tool_size
+        es igual a 3 o 4, para un tool_size de 1 o 2 no es necesaria la
+        optimización). Aún así, esta optimización parece no ser suficiente.
+        """
+
+        start = self.get_relative_coords(*self._click_mouse_position)
+        end = self.get_relative_coords(*self._mouse_position)
+
+        x1, y1 = start
+        x2, y2 = end
+
+        start_points = []
+        end_points = []
+        # -----------------
+        # | 4 | 5 | 6 | 9 |
+        # |---|---|---|---|
+        # | 7 | X | 1 | 10|
+        # |---|---|---|---|
+        # | 8 | 2 | 3 | 11|
+        # |---|---|---|---|
+        # | 12| 13| 14| 15|
+        # -----------------
+
+        if self.config.tool_size <= 2:
+            # Si es de 1x1 o 2x2 no hay gran pérdida de rendimiento
+            start_points = self.get_selected_pixels(self._click_mouse_position)
+            end_points = self.get_selected_pixels(self._mouse_position)
+
+        elif self.config.tool_size == 3:
+            if x1 > x2 and y1 > y2:
+                start_points = [
+                    (x1 + 1, y1 - 1),
+                    (x1 + 1, y1),
+                    (x1 + 1, y1 + 1),
+                    (x1, y1 + 1),
+                    (x1 - 1, y1 + 1),
+                ]
+
+                end_points = [
+                    (x2 + 1, y2 - 1),
+                    (x2, y2 - 1),
+                    (x2 - 1, y2 - 1),
+                    (x2 - 1, y2),
+                    (x2 - 1, y2 + 1),
+                ]
+
+            elif x1 > x2 and y1 < y2:
+                start_points = [
+                    (x1 - 1, y1 - 1),
+                    (x1, y1 - 1),
+                    (x1 + 1, y1 -1),
+                    (x1 + 1, y1),
+                    (x1 + 1, y1 + 1),
+                ]
+
+                end_points = [
+                    (x2 - 1, y2 - 1),
+                    (x2 - 1, y2),
+                    (x2 - 1, y2 + 1),
+                    (x2, y2 + 1),
+                    (x2 + 1, y2 + 1)
+                ]
+
+            elif x1 < x2 and y1 > y2:
+                start_points = [
+                    (x1 - 1, y1 - 1),
+                    (x1 - 1, y1),
+                    (x1 - 1, y1 + 1),
+                    (x1, y1 + 1),
+                    (x1 + 1, y1 + 1)
+                ]
+
+                end_points = [
+                    (x2 - 1, y2 - 1),
+                    (x2, y2 - 1),
+                    (x2 + 1, y2 -1),
+                    (x2 + 1, y2),
+                    (x2 + 1, y2 + 1),
+                ]
+
+            elif x1 < x2 and y1 < y2:
+                start_points = [
+                    (x1 + 1, y1 - 1),
+                    (x1, y1 - 1),
+                    (x1 - 1, y1 - 1),
+                    (x1 - 1, y1),
+                    (x1 - 1, y1 + 1),
+                ]
+
+                end_points = [
+                    (x2 + 1, y2 - 1),
+                    (x2 + 1, y2),
+                    (x2 + 1, y2 + 1),
+                    (x2, y2 + 1),
+                    (x2 - 1, y2 + 1),
+                ]
+
+            elif y1 == y2 and x1 >= x2:
+                start_points = [(x1 + 1, y1 + i) for i in range(-1, 2)]
+                end_points = [(x2 - 1, y2 + i) for i in range(-1, 2)]
+
+            elif y1 == y2 and x1 < x2:
+                start_points = [(x1 - 1, y1 + i) for i in range(-1, 2)]
+                end_points = [(x2 + 1, y2 + i) for i in range(-1, 2)]
+
+            elif x1 == x2 and y1 > y2:
+                start_points = [(x1 + i, y1 + 1) for i in range(-1, 2)]
+                end_points = [(x2 + i, y2 - 1) for i in range(-1, 2)]
+
+            elif x1 == x2 and y1 < y2:
+                start_points = [(x1 + i, y1 - 1) for i in range(-1, 2)]
+                end_points = [(x2 + i, y2 + 1) for i in range(-1, 2)]
+
+        else:
+        #elif self.config.tool_size == 4:
+            if x1 > x2 and y1 > y2:
+                start_points = [
+                    (x1 + 2, y1 - 1),
+                    (x1 + 2, y1),
+                    (x1 + 2, y1 + 1),
+                    (x1 + 2, y1 + 2),
+                    (x1 + 1, y1 + 2),
+                    (x1, y1 + 2),
+                    (x1 - 1, y1 + 2)
+                ]
+
+                end_points = [
+                    (x2 + 2, y2 - 1),
+                    (x2 + 1, y2 - 1),
+                    (x2, y2 - 1),
+                    (x2 - 1, y2 - 1),
+                    (x2 - 1, y2),
+                    (x2 - 1, y2 + 1),
+                    (x2 - 1, y2 + 2)
+                ]
+
+            elif x1 > x2 and y1 < y2:
+                start_points = [
+                    (x1 - 1, y1 - 1),
+                    (x1, y1 - 1),
+                    (x1 + 1, y1 - 1),
+                    (x1 + 2, y1 - 1),
+                    (x1 + 2, y1),
+                    (x1 + 2, y1 + 1),
+                    (x1 + 2, y1 + 2),
+                ]
+
+                end_points = [
+                    (x2 - 1, y2 - 1),
+                    (x2 - 1, y2),
+                    (x2 - 1, y2 + 1),
+                    (x2 - 1, y2 + 2),
+                    (x2, y2 + 2),
+                    (x2 + 1, y2 + 2),
+                    (x2 + 2, y2 + 2),
+                ]
+
+            elif x1 < x2 and y1 > y2:
+                start_points = [
+                    (x1 - 1, y1 - 1),
+                    (x1 - 1, y1),
+                    (x1 - 1, y1 + 1),
+                    (x1 - 1, y1 + 2),
+                    (x1, y1 + 2),
+                    (x1 + 1, y1 + 2),
+                    (x1 + 2, y1 + 2)
+                ]
+
+                end_points = [
+                    (x2 - 1, y2 - 1),
+                    (x2, y2 - 1),
+                    (x2 + 1, y2 - 1),
+                    (x2 + 2, y2 - 1),
+                    (x2 + 2, y2),
+                    (x2 + 2, y2 + 1),
+                    (x2 + 2, y2 + 2)
+                ]
+
+            elif x1 < x2 and y1 < y2:
+                start_points = [
+                    (x1 + 2, y1 - 1),
+                    (x1 + 1, y1 - 1),
+                    (x1, y1 - 1),
+                    (x1 - 1, y1 - 1),
+                    (x1 - 1, y1),
+                    (x1 - 1, y1 + 1),
+                    (x1 - 1, y1 + 2),
+                ]
+
+                end_points = [
+                    (x2 + 2, y2 - 1),
+                    (x2 + 2, y2),
+                    (x2 + 2, y2 + 1),
+                    (x2 + 2, y2 + 2),
+                    (x2 + 1, y2 + 2),
+                    (x2, y2 + 2),
+                    (x2 - 1, y2 + 2),
+                ]
+
+            elif y1 == y2 and x1 >= x2:
+                start_points = [(x1 + 2, y1 + i) for i in range(-1, 3)]
+                end_points = [(x2 - 1, y1 + i) for i in range(-1, 3)]
+
+            elif y1 == y2 and x1 < x2:
+                start_points = [(x1 - 1, y1 + i) for i in range(-1, 3)]
+                end_points = [(x2 + 2, y1 + i) for i in range(-1, 3)]
+
+            elif x1 == x2 and y1 > y2:
+                start_points = [(x1 + i, y1 + 2) for i in range(-1, 3)]
+                end_points = [(x2 + i, y2 - 1) for i in range(-1, 3)]
+
+            elif x1 == x2 and y1 < y2:
+                start_points = [(x1 + i, y1 - 1) for i in range(-1, 3)]
+                end_points = [(x2 + i, y2 + 2) for i in range(-1, 3)]
+
+        return start_points, end_points
 
 
 class CanvasContainer(Gtk.Box):
