@@ -48,16 +48,15 @@ class CanvasNotebookTab(Gtk.Box):
         # cambiado el tamaño del canvas antes de que se cree este tab.
         global TAB_CANVAS_CONFIG
         if TAB_CANVAS_CONFIG is None:
-            self.canvas = Canvas(zoom=500,
-                                 layout_size=self._associated.canvas.config.layout_size,
-                                 editable=False)
+            TAB_CANVAS_CONFIG = CanvasConfig(
+                zoom=500,
+                layout_size=self._associated.canvas.config.layout_size,
+                resizable=False,
+                editable=False)
 
-            TAB_CANVAS_CONFIG = self.canvas.config
-
-        else:
-            self.canvas = Canvas(config=TAB_CANVAS_CONFIG)
-
-        self.canvas.set_resizable(False)
+        self.canvas = Canvas(config=TAB_CANVAS_CONFIG)
+        self.canvas.set_size_request(100, 100)
+        # self.canvas.set_resizable(False)
         self.overlay.add(self.canvas)
 
         overlay_box = Gtk.Box()

@@ -326,21 +326,6 @@ class Canvas(Gtk.DrawingArea):
 
         self.connect("draw", self._draw_cb)
 
-    def resize(self):
-        width, height = self.config.layout_size
-
-        if not self.config.resizable:
-            alloc = self.get_allocation()
-            self.config.zoom = 100 * min(alloc.width / width, alloc.height / height)
-            return
-
-        width = width * self.config.zoom / 100
-        height = height * self.config.zoom / 100
-        self.set_size_request(width, height)
-
-        # No es necesario llamar self.redraw() a menos que
-        # no se cambie el tamaño
-
     def _scroll_cb(self, canvas, event):
         if event.state != Gdk.ModifierType.CONTROL_MASK:
             # Elimino el modificador para que piense que el usuario
@@ -484,10 +469,21 @@ class Canvas(Gtk.DrawingArea):
     def redraw(self):
         GLib.idle_add(self.queue_draw)
 
-    def set_tool_size(self, size):
-        # self.config.tool_size = size
-        # self.redraw()
-        print("Implementar Canvas.set_tool_size")
+    def resize(self):
+        width, height = self.config.layout_size
+
+        if not self.config.resizable:
+            alloc = self.get_allocation()
+            self.config._zoom = 100 * min(alloc.width / width, alloc.height / height)
+            self.redraw()
+            return
+
+        width = width * self.config.zoom / 100
+        height = height * self.config.zoom / 100
+        self.set_size_request(width, height)
+
+        # No es necesario llamar self.redraw() a menos que
+        # no se cambie el tamaño
 
     def set_layout_size(self, size):
         new_width, new_height = size
@@ -507,16 +503,6 @@ class Canvas(Gtk.DrawingArea):
         self._current_layout_size = size
         self.pixelmap.width, self.pixelmap.height = self.config.layout_size
         self.resize()
-
-    def set_tool(self, tool):
-        if Gdk.BUTTON_PRIMARY in self._pressed_buttons or  \
-            Gdk.BUTTON_SECONDARY in self._pressed_buttons:
-
-            self._pending_tool = tool
-
-        else:
-            self.config.tool = tool
-            self.redraw()
 
     def _zoom_changed_cb(self, zoom):
         self.resize()
@@ -676,18 +662,6 @@ class Canvas(Gtk.DrawingArea):
 
     def get_sprite_size(self):
         return self.config.layout_size
-
-    def set_editable(self, editable):
-        print("Implementar Canvas.set_editable")
-
-    def get_editable(self):
-        return self.config.editable
-
-    def set_resizable(self, resizable):
-        self.resizable = resizable
-
-    def get_resizable(self):
-        return self.resizable
 
     def get_file(self):
         return self.file
