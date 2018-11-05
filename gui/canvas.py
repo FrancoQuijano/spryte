@@ -153,13 +153,15 @@ class CanvasConfig:
     DEFAULT_SHOW_GRID = False
     DEFAULT_RESIZABLE = True
     DEFAULT_EDITABLE = True
+    DEFAULT_FILE = None
 
     def __init__(self, layout_size=DEFAULT_LAYOUT_SIZE, tool=DEFAULT_TOOL,
                  tool_size=DEFAULT_TOOL_SIZE,
                  primary_color=DEFAULT_PRIMARY_COLOR,
                  secondary_color=DEFAULT_SECONDARY_COLOR,
                  zoom=DEFAULT_ZOOM, show_grid=DEFAULT_SHOW_GRID,
-                 resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE):
+                 resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE,
+                 file=DEFAULT_FILE):
 
         self._layout_size = layout_size
         self._tool = tool
@@ -170,6 +172,7 @@ class CanvasConfig:
         self._show_grid = show_grid
         self._resizable = resizable
         self._editable = editable
+        self._file = file
 
         self._callbacks = {}
 
@@ -273,6 +276,15 @@ class CanvasConfig:
         self._editable = value
         self.emit("editable")
 
+    @property
+    def file(self):
+        return self._file
+
+    @file.setter
+    def file(self, value):
+        self._file = value
+        self.emit("file")
+
 
 class Canvas(Gtk.DrawingArea):
 
@@ -294,6 +306,7 @@ class Canvas(Gtk.DrawingArea):
 
         self.config.connect("layout-size", self.set_layout_size)
         self.config.connect("zoom", self._zoom_changed_cb)
+        self.config.connect("file", self.set_file)
 
         self.pixelmap = PixelMap(*self.config.layout_size)
         self.file = None
@@ -498,6 +511,7 @@ class Canvas(Gtk.DrawingArea):
                 self.pixelmap.delete_pixel_at(x, y)
 
         self.set_sprite_size((new_width, new_height))
+        self.emit("size-changed")
 
     def set_sprite_size(self, size):
         self._current_layout_size = size
@@ -648,23 +662,18 @@ class Canvas(Gtk.DrawingArea):
         if refresh:
             self.redraw()
 
-    def set_file(self, filename, refresh=True):
+    def set_file(self, filename):
         self.file = filename
+        image = Image.open(filename)
 
-        if refresh:
-            image = Image.open(filename)
-            self.config.layout_size = image.size
-            self.pixelmap.load_data_from_image(image)
-            self.resize()
+        self.config.layout_size = image.size
+        self.pixelmap.load_data_from_image(image)
+        self.resize()
 
-            self.emit("size-changed")
-            self.emit("changed")
+        self.emit("changed")
 
     def get_sprite_size(self):
         return self.config.layout_size
-
-    def get_file(self):
-        return self.file
 
     def undo(self):
         index = self._history.index(self.pixelmap)
@@ -953,9 +962,6 @@ class CanvasContainer(Gtk.Box):
 
     def set_pixelmap(self, pixelmap, refresh=True):
         self.canvas.set_pixelmap(pixelmap, refresh=True)
-
-    def set_file(self, filename, refresh=True):
-        self.canvas.set_file(filename, refresh=refresh)
 
     def get_file(self):
         return self.canvas.get_file()

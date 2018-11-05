@@ -172,19 +172,21 @@ class SpryteWindow(Gtk.ApplicationWindow):
             self.canvases_notebook.open_file(file)
             break  # TODO: Agregar soporte para más de un archivo, luego borrar esto
 
-    def save(self):
-        file = self.canvases_notebook.get_file()
+    def save(self, file=None):
         if file is None:
-            self.save_as()
-            return
+            file = self.canvases_notebook.get_file()
+            if file is None:
+                self.save_as()
+                return
+
+        pixelmaps = self.canvases_notebook.get_pixelmaps()
+        FileManagement.save(pixelmaps, file)
+        self.canvases_notebook.set_file(file, refresh=False)
 
     def save_as(self):
         file = FileChooserManager.save(self)
-
-        if file is not None:
-            pixelmaps = self.canvases_notebook.get_pixelmaps()
-            FileManagement.save(pixelmaps, file)
-            self.canvases_notebook.set_file(file, refresh=False)
+        if file is not None:  # El usuario canceló la acción de guardar
+            self.save(file)
 
     def undo(self):
         self.canvases_notebook.undo()

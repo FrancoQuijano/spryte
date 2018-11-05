@@ -228,22 +228,26 @@ class FileManagement:
         # png, svg, etc..) en una sola imagen, un frame al lado del otro
 
         if file.endswith(".svg"):
-            i = 1
-            file = file[:-len(".svg")]
-            for pixelmap in pixelmaps:
-                _file = file + " %d.svg" % i
-                FileManagement._save_as_svg(pixelmap, _file)
+            if len(pixelmaps) == 1:
+                FileManagement._save_as_svg(pixelmaps[0], file)
 
-                i += 1
+            else:
+                file = file[:-len(".svg")]
+
+                for i, pixelmap in enumerate(pixelmaps):
+                    _file = file + " %d.svg" % i
+                    FileManagement._save_as_svg(pixelmap, _file)
 
         elif file.endswith(".png"):
-            i = 1
-            file = file[:-len(".svg")]
-            for pixelmap in pixelmaps:
-                _file = file + " %d.png" % i
-                FileManagement._save_as_png(pixelmap, _file)
+            if len(pixelmaps) == 1:
+                FileManagement._save_as_png(pixelmaps[0], file)
 
-                i += 1
+            else:
+                file = file[:-len(".png")]
+
+                for i, pixelmap in enumerate(pixelmaps):
+                    _file = file + " %d.png" % i
+                    FileManagement._save_as_png(pixelmap, _file)
 
         elif file.endswith(".gif"):
             FileManagement._save_as_gif(pixelmaps, file)
