@@ -16,7 +16,8 @@ from gui import ToolPalette
 from gui import HeaderBar
 from gui import CanvasContainer
 from gui import Statusbar
-from gui import CanvasesNotebook
+# from gui import CanvasesNotebook
+from gui import FilesNotebook
 from gui.utils import FileChooserManager
 from gui.utils import FileManagement
 
@@ -121,10 +122,9 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.tool_palette.connect("secondary-color-changed", self._secondary_color_changed_cb)
         self.layout.pack_start(self.tool_palette, False, False, 0)
 
-        self.canvases_notebook = CanvasesNotebook()
-        self.canvases_notebook.append_page()
-        self.canvases_notebook.append_page()
-        self.layout.pack_start(self.canvases_notebook, True, True, 0)
+        self.files_notebook = FilesNotebook()
+        self.files_notebook.append_page()
+        self.layout.pack_start(self.files_notebook, True, True, 0)
 
         self.statusbar = Statusbar()
         self.statusbar.connect("zoom-changed", self._zoom_changed_cb)
@@ -132,31 +132,34 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
         self.show_all()
 
+    def get_current_cavases_notebook(self):
+        return self.files_notebook.get_current_notebook()
+
     def _tool_size_changed_cb(self, headerbar, size):
-        self.canvases_notebook.set_tool_size(size)
+        self.get_current_cavases_notebook().set_tool_size(size)
 
     def _layout_size_changed_cb(self, headerbar, size):
-        self.canvases_notebook.set_layout_size(size)
+        self.get_current_cavases_notebook().set_layout_size(size)
 
     def _tool_changed_cb(self, palette, tool):
-        self.canvases_notebook.set_tool(tool)
+        self.get_current_cavases_notebook().set_tool(tool)
 
     def _primary_color_changed_cb(self, palette, color):
-        self.canvases_notebook.set_primary_color(color)
+        canvases_notebook.set_primary_color(color)
 
     def _secondary_color_changed_cb(self, palette, color):
-        self.canvases_notebook.set_secondary_color(color)
+        self.get_current_cavases_notebook().set_secondary_color(color)
 
     def _zoom_changed_cb(self, statusbar, zoom):
-        self.canvases_notebook.set_zoom(zoom)
+        self.get_current_cavases_notebook().set_zoom(zoom)
 
     def _primary_color_picked_cb(self, canvas, color):
         self.tool_palette.set_primary_color(color)
-        self.canvases_notebook.set_primary_color(color)
+        self.get_current_cavases_notebook().set_primary_color(color)
 
     def _secondary_color_picked_cb(self, canvas, color):
         self.tool_palette.set_secondary_color(color)
-        self.canvases_notebook.set_secondary_color(color)
+        self.get_current_cavases_notebook().set_secondary_color(color)
 
     def new_file(self):
         print("TOOD: SpryteWindow.new_file")
@@ -169,20 +172,22 @@ class SpryteWindow(Gtk.ApplicationWindow):
                 print("WARNING: no se tienen permisos de lectura para %s" % file)
                 break  # TODO: Cambiar por continue cuando agregue soporte para múltiples archivos
 
-            self.canvases_notebook.open_file(file)
+            self.get_current_cavases_notebook().open_file(file)
             break  # TODO: Agregar soporte para más de un archivo, luego borrar esto
 
     def save(self, file=None):
         if file is None:
-            file = self.canvases_notebook.get_file()
+            file = self.get_current_cavases_notebook().get_file()
 
             if file is None:
                 self.save_as()
                 return
 
-        pixelmaps = self.canvases_notebook.get_pixelmaps()
+        pixelmaps = self.get_current_cavases_notebook().get_pixelmaps()
         FileManagement.save(pixelmaps, file)
-        self.canvases_notebook.set_file(file, refresh=False)
+
+        self.get_current_cavases_notebook().set_file(file, refresh=False)
+        self.files_notebook.set_filename(os.path.basename(file))
 
     def save_as(self):
         file = FileChooserManager.save(self)
@@ -190,10 +195,10 @@ class SpryteWindow(Gtk.ApplicationWindow):
             self.save(file)
 
     def undo(self):
-        self.canvases_notebook.undo()
+        self.get_current_cavases_notebook().undo()
 
     def redo(self):
-        self.canvases_notebook.redo()
+        self.get_current_cavases_notebook().redo()
 
 
 if __name__ == "__main__":

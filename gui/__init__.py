@@ -6,3 +6,4 @@ from .headerbar import HeaderBar
 from .canvas import CanvasContainer
 from .statusbar import Statusbar
 from .canvases_notebook import CanvasesNotebook
+from .files_notebook import FilesNotebook
