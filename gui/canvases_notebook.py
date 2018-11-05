@@ -18,6 +18,7 @@ TAB_CANVAS_CONFIG = None
 class CanvasNotebookTab(Gtk.Box):
 
     __gsignals__ = {
+        "copy": (GObject.SIGNAL_RUN_LAST, None, []),
         "delete": (GObject.SIGNAL_RUN_LAST, None, []),
     }
 
@@ -77,16 +78,31 @@ class CanvasNotebookTab(Gtk.Box):
         hbox.pack_start(self.index_label, False, False, 0)
 
         self.top_revealer = Gtk.Revealer()
-        self.top_revealer.set_halign(Gtk.Align.END)
+        # self.top_revealer.set_halign(Gtk.Align.END)
         self.top_revealer.set_valign(Gtk.Align.START)
         self.top_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         hbox.pack_start(self.top_revealer, True, True, 0)
 
-        delete_button = Gtk.Button.new_from_icon_name("window-close-symbolic", Gtk.IconSize.MENU)
+        # FIXME: El fondo de los botones puede aparecer transparente
+        # (por ejemplo: en pantheon), y no se ven muy bien qué
+        revealer_hbox = Gtk.Box()
+        revealer_hbox.set_orientation(Gtk.Orientation.HORIZONTAL)
+        self.top_revealer.add(revealer_hbox)
+        self.top_revealer.set_reveal_child(False)
+
+        copy_button = Gtk.Button.new_from_icon_name("edit-copy-symbolic",
+                                                    Gtk.IconSize.MENU)
+        copy_button.set_tooltip_text("Copy frame")
+        copy_button.connect("enter-notify-event", self._enter_cb)
+        copy_button.connect("clicked", lambda b: self.emit("copy"))
+        revealer_hbox.pack_start(copy_button, False, False, 0)
+
+        delete_button = Gtk.Button.new_from_icon_name("window-close-symbolic",
+                                                      Gtk.IconSize.MENU)
+        delete_button.set_tooltip_text("Delete frame")
         delete_button.connect("enter-notify-event", self._enter_cb)
         delete_button.connect("clicked", lambda b: self.emit("delete"))
-        self.top_revealer.add(delete_button)
-        self.top_revealer.set_reveal_child(False)
+        revealer_hbox.pack_end(delete_button, False, False, 0)
 
         self.show_all()
 
@@ -157,6 +173,19 @@ class CanvasesNotebook(Gtk.Notebook):
         tab_canvas.config._layout_size = canvas.config.layout_size
         tab_canvas.resize()
 
+    def _copy_tab_cb(self, tab):
+        idx = self.get_children().index(tab._associated) + 1
+        print("COPY TAB")
+
+        """
+        canvas = self.append_page(reorder=False)
+        import ipdb; ipdb.set_trace()
+        canvas.pixelmap = self.get_children()[idx - 2].pixelmap.copy()
+
+        self.reorder_child(canvas, idx)
+        self.set_current_page(idx)
+        """
+
     def _delete_tab_cb(self, tab):
         idx = self.get_children().index(tab._associated)
 
@@ -192,7 +221,7 @@ class CanvasesNotebook(Gtk.Notebook):
 
             idx += 1
 
-    def append_page(self):
+    def append_page(self, reorder=True):
         canvas = CanvasContainer(config=self._canvas_config)
         canvas.connect("changed", self._canvas_changed_cb)
         canvas.connect("size-changed", self._canvas_size_changed_cb)
@@ -203,8 +232,11 @@ class CanvasesNotebook(Gtk.Notebook):
             self._canvas_config = canvas.canvas.config
 
         tab = CanvasNotebookTab(canvas)
-        tab.set_index(self.get_n_pages() + 1)
+        tab.connect("copy", self._copy_tab_cb)
         tab.connect("delete", self._delete_tab_cb)
+
+        if reorder:
+            tab.set_index(self.get_n_pages() + 1)
 
         self.canvases[canvas] = tab
 
@@ -213,6 +245,8 @@ class CanvasesNotebook(Gtk.Notebook):
 
         canvas.show_all()
         tab.show_all()
+
+        return canvas
 
     def set_tool(self, tool):
         self._canvas_config.tool = tool

@@ -141,6 +141,13 @@ class PixelMap(object):
                 color = Color.rgba_to_cairo((r, g, b, a))
                 self.pixels.append(Pixel(x + 1, y + 1, color))
 
+    def copy(self):
+        pixelmap = PixelMap(self.width, self.height)
+        pixelmap.pixels = self.pixels.copy()
+        pixelmap.temp_pixels = self.temp_pixels.copy()
+
+        return pixelmap
+
 
 class CanvasConfig:
 
@@ -957,6 +964,7 @@ class CanvasContainer(Gtk.Box):
         box2.pack_start(self.canvas, True, False, 0)
 
         self.config = self.canvas.config
+        self.pixelmap = self.canvas.pixelmap
 
     def _changed_cb(self, canvas):
         self.emit("changed")
