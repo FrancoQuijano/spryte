@@ -87,15 +87,15 @@ class PixelMap(object):
 
     def set_temp_pixel_color(self, x, y, color):
         pixel = self.get_temp_pixel_at(x, y)
-        if pixel is None and color[Color.ALPHA] != 0:
+        if pixel is None:
+            if self.get_pixel_at(x, y) is None and color[Color.ALPHA] == 0:
+                return
+
             pixel = Pixel(x, y, color)
             self.temp_pixels.append(pixel)
 
         elif color[Color.ALPHA] != 0:
             pixel.color = color
-
-        elif color[Color.ALPHA] == 0:
-            self.delete_temp_pixel_at(x, y)
 
     def delete_pixel_at(self, x, y):
         for pixel in self.pixels:
@@ -430,8 +430,16 @@ class Canvas(Gtk.DrawingArea):
 
         self._draw_bg(ctx)
 
-        for pixel in self.pixelmap.pixels + self.pixelmap.temp_pixels:
-            x, y = self.get_absolute_coords(pixel.x, pixel.y)
+        painted = []
+
+        # Los pixeles temporales tienen preferencia
+        for pixel in self.pixelmap.temp_pixels + self.pixelmap.pixels:
+            coords = (pixel.x, pixel.y)
+            if coords in painted:
+                continue
+
+            painted.append(coords)
+            x, y = self.get_absolute_coords(*coords)
 
             ctx.set_source_rgba(*pixel.color)
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
