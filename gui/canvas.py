@@ -64,7 +64,8 @@ class PixelMap(object):
             return Color.TRANSPARENT
 
     def set_pixel_color(self, x, y, color):
-        # FIXME: Fijarse si x, y pertenecen a este pixelmap
+        if x <= 0 or x > self.width or y <= 0 or y > self.height:
+            return
 
         pixel = self.get_pixel_at(x, y)
         if pixel is None and color[Color.ALPHA] != 0:
@@ -86,6 +87,9 @@ class PixelMap(object):
             return Color.TRANSPARENT
 
     def set_temp_pixel_color(self, x, y, color):
+        if x <= 0 or x > self.width or y <= 0 or y > self.height:
+            return
+
         pixel = self.get_temp_pixel_at(x, y)
         if pixel is None:
             if self.get_pixel_at(x, y) is None and color[Color.ALPHA] == 0:
