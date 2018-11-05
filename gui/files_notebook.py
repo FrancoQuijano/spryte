@@ -35,6 +35,12 @@ class FilesNotebook(Gtk.Notebook):
 
         self.set_tab_pos(Gtk.PositionType.BOTTOM)
 
+        new_tab_button = Gtk.Button.new_from_icon_name(
+            "list-add-symbolic", Gtk.IconSize.MENU)
+        new_tab_button.connect("clicked", lambda btn: self.append_page())
+        self.set_action_widget(new_tab_button, Gtk.PackType.END)
+        new_tab_button.show_all()
+
     def append_page(self):
         notebook = CanvasesNotebook()
         notebook.append_page()
@@ -48,6 +54,8 @@ class FilesNotebook(Gtk.Notebook):
 
         notebook.show_all()
         tab.show_all()
+
+        self.set_current_page(-1)
 
     def get_current_notebook(self):
         return self.get_children()[self.get_current_page()]
