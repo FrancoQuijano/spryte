@@ -4,6 +4,7 @@
 from .canvases_notebook import CanvasesNotebook
 
 from gi.repository import Gtk
+from gi.repository import GObject
 
 
 class FileNotebookTab(Gtk.Box):
@@ -28,6 +29,11 @@ class FileNotebookTab(Gtk.Box):
 
 class FilesNotebook(Gtk.Notebook):
 
+    __gsignals__ = {
+        "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+    }
+
     def __init__(self):
         Gtk.Notebook.__init__(self)
 
@@ -41,10 +47,18 @@ class FilesNotebook(Gtk.Notebook):
         self.set_action_widget(new_tab_button, Gtk.PackType.END)
         new_tab_button.show_all()
 
+    def _primary_color_picked_cb(self, canvas, color):
+        self.emit("primary-color-picked", color)
+
+    def _secondary_color_picked_cb(self, canvas, color):
+        self.emit("secondary-color-picked", color)
+
     def append_page(self):
         notebook = CanvasesNotebook()
         notebook.append_page()
         notebook.append_page()
+        notebook.connect("primary-color-picked", self._primary_color_picked_cb)
+        notebook.connect("secondary-color-picked", self._secondary_color_picked_cb)
 
         tab = FileNotebookTab(notebook)
         self.notebooks[notebook] = tab

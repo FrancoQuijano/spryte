@@ -120,6 +120,11 @@ class CanvasNotebookTab(Gtk.Box):
 
 class CanvasesNotebook(Gtk.Notebook):
 
+    __gsignals__ = {
+        "primary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+        "secondary-color-picked": (GObject.SIGNAL_RUN_LAST, None, [GObject.TYPE_PYOBJECT]),
+    }
+
     def __init__(self):
         Gtk.Notebook.__init__(self)
 
@@ -167,6 +172,12 @@ class CanvasesNotebook(Gtk.Notebook):
 
         self.reset_indices()
 
+    def _primary_color_picked_cb(self, canvas, color):
+        self.emit("primary-color-picked", color)
+
+    def _secondary_color_picked_cb(self, canvas, color):
+        self.emit("secondary-color-picked", color)
+
     def _page_reordered_cb(self, notebook, child, page_num):
         if page_num == len(self.get_children()) - 1:
             self.append_page()
@@ -185,6 +196,8 @@ class CanvasesNotebook(Gtk.Notebook):
         canvas = CanvasContainer(config=self._canvas_config)
         canvas.connect("changed", self._canvas_changed_cb)
         canvas.connect("size-changed", self._canvas_size_changed_cb)
+        canvas.connect("primary-color-picked", self._primary_color_picked_cb)
+        canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
 
         if self._canvas_config is None:
             self._canvas_config = canvas.canvas.config

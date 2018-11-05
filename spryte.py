@@ -124,6 +124,8 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
         self.files_notebook = FilesNotebook()
         self.files_notebook.append_page()
+        self.files_notebook.connect("primary-color-picked", self._primary_color_picked_cb)
+        self.files_notebook.connect("secondary-color-picked", self._secondary_color_picked_cb)
         self.layout.pack_start(self.files_notebook, True, True, 0)
 
         self.statusbar = Statusbar()
@@ -145,7 +147,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.get_current_cavases_notebook().set_tool(tool)
 
     def _primary_color_changed_cb(self, palette, color):
-        canvases_notebook.set_primary_color(color)
+        self.get_current_cavases_notebook().set_primary_color(color)
 
     def _secondary_color_changed_cb(self, palette, color):
         self.get_current_cavases_notebook().set_secondary_color(color)
