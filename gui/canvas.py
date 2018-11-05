@@ -305,6 +305,7 @@ class Canvas(Gtk.DrawingArea):
         self._click_mouse_position = (None, None)
         self._selected_pixels = []
         self._history = [self.pixelmap]
+        self._current_layout_size = self.config.layout_size
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -490,7 +491,7 @@ class Canvas(Gtk.DrawingArea):
 
     def set_layout_size(self, size):
         new_width, new_height = size
-        current_width, current_height = self.config.layout_size
+        current_width, current_height = self._current_layout_size
 
         for x in range(new_width + 1, current_width + 1):
             for y in range(1, current_height + 1):
@@ -503,8 +504,8 @@ class Canvas(Gtk.DrawingArea):
         self.set_sprite_size((new_width, new_height))
 
     def set_sprite_size(self, size):
-        self.layout_size = size
-        self.pixelmap.width, self.pixelmap.height = self.layout_size
+        self._current_layout_size = size
+        self.pixelmap.width, self.pixelmap.height = self.config.layout_size
         self.resize()
 
     def set_tool(self, tool):
