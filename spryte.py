@@ -175,6 +175,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
     def save(self, file=None):
         if file is None:
             file = self.canvases_notebook.get_file()
+
             if file is None:
                 self.save_as()
                 return

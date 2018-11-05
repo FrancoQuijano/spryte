@@ -148,7 +148,9 @@ class CanvasesNotebook(Gtk.Notebook):
 
     def _canvas_size_changed_cb(self, canvas):
         tab_canvas = self.canvases[canvas].get_canvas()
-        tab_canvas.set_sprite_size(*canvas.get_sprite_size())
+
+        tab_canvas.config._layout_size = canvas.config.layout_size
+        tab_canvas.resize()
 
     def _delete_tab_cb(self, tab):
         idx = self.get_children().index(tab._associated)

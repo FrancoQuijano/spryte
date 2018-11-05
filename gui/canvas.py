@@ -319,6 +319,7 @@ class Canvas(Gtk.DrawingArea):
         self._selected_pixels = []
         self._history = [self.pixelmap]
         self._current_layout_size = self.config.layout_size
+        self._waiting_for_realize = False
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -338,6 +339,7 @@ class Canvas(Gtk.DrawingArea):
             self.connect("button-release-event", self._button_release_cb)
 
         self.connect("draw", self._draw_cb)
+        self.connect("realize", self._realize_cb)
 
     def _scroll_cb(self, canvas, event):
         if event.state != Gdk.ModifierType.CONTROL_MASK:
@@ -479,6 +481,10 @@ class Canvas(Gtk.DrawingArea):
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
+    def _realize_cb(self, canvas, *args):
+        if self._waiting_for_realize:
+            self.resize()
+
     def redraw(self):
         GLib.idle_add(self.queue_draw)
 
@@ -486,6 +492,10 @@ class Canvas(Gtk.DrawingArea):
         width, height = self.config.layout_size
 
         if not self.config.resizable:
+            if not self._waiting_for_realize:
+                self._waiting_for_realize = True
+                return
+
             alloc = self.get_allocation()
             self.config._zoom = 100 * min(alloc.width / width, alloc.height / height)
             self.redraw()
@@ -658,6 +668,7 @@ class Canvas(Gtk.DrawingArea):
 
     def set_pixelmap(self, pixelmap, refresh=True):
         self.pixelmap = pixelmap
+        self.pixelmaps = [self.pixelmap]
 
         if refresh:
             self.redraw()
@@ -944,6 +955,8 @@ class CanvasContainer(Gtk.Box):
         self.canvas.connect("primary-color-picked", self._primary_color_picked_cb)
         self.canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
         box2.pack_start(self.canvas, True, False, 0)
+
+        self.config = self.canvas.config
 
     def _changed_cb(self, canvas):
         self.emit("changed")
