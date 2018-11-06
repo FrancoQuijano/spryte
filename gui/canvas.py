@@ -316,7 +316,6 @@ class Canvas(Gtk.DrawingArea):
         self.config.connect("file", self.set_file)
 
         self.pixelmap = PixelMap(*self.config.layout_size)
-        self.pixelmaps = [self.pixelmap]
         self.file = None
         self.modified = False
 
@@ -677,9 +676,13 @@ class Canvas(Gtk.DrawingArea):
     def get_pixelmap(self):
         return self.pixelmap
 
-    def set_pixelmap(self, pixelmap, refresh=True):
+    def set_pixelmap(self, pixelmap, refresh=True, reset=False):
         self.pixelmap = pixelmap
-        self.pixelmaps.append(self.pixelmap)
+        if reset:
+            self._history = [self.pixelmap]
+
+        else:
+            self._history.append(self.pixelmap)
 
         if refresh:
             self.redraw()
@@ -985,8 +988,8 @@ class CanvasContainer(Gtk.Box):
     def get_pixelmap(self):
         return self.canvas.get_pixelmap()
 
-    def set_pixelmap(self, pixelmap, refresh=True):
-        self.canvas.set_pixelmap(pixelmap, refresh=True)
+    def set_pixelmap(self, pixelmap, *args, **kargs):
+        self.canvas.set_pixelmap(pixelmap, *args, **kargs)
 
     def get_file(self):
         return self.canvas.get_file()

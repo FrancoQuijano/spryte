@@ -165,7 +165,6 @@ class CanvasesNotebook(Gtk.Notebook):
 
     def _canvas_changed_cb(self, canvas):
         tab_canvas = self.canvases[canvas].get_canvas()
-        tab_canvas.gfewge = 1
         tab_canvas.set_pixelmap(canvas.get_pixelmap())
 
     def _canvas_size_changed_cb(self, canvas):
@@ -175,17 +174,17 @@ class CanvasesNotebook(Gtk.Notebook):
         tab_canvas.resize()
 
     def _copy_tab_cb(self, tab):
-        idx = self.get_children().index(tab._associated) + 1
-        print("COPY TAB")
+        idx = self.get_children().index(tab._associated)
+        pixelmap = tab._associated.get_pixelmap().copy()
 
-        """
-        canvas = self.append_page(reorder=False)
-        import ipdb; ipdb.set_trace()
-        canvas.pixelmap = self.get_children()[idx - 2].pixelmap.copy()
+        canvas = self.append_page()
+        canvas.set_pixelmap(pixelmap, reset=True)
 
-        self.reorder_child(canvas, idx)
-        self.set_current_page(idx)
-        """
+        self.reorder_child(canvas, idx + 1)
+        self.reset_indices()
+        self.set_current_page(idx + 1)
+
+        self._canvas_changed_cb(canvas)
 
     def _delete_tab_cb(self, tab):
         idx = self.get_children().index(tab._associated)
@@ -229,7 +228,7 @@ class CanvasesNotebook(Gtk.Notebook):
         canvas.connect("primary-color-picked", self._primary_color_picked_cb)
         canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
 
-        tab = CanvasNotebookTab(canvas.canvas)
+        tab = CanvasNotebookTab(canvas)
         tab.connect("copy", self._copy_tab_cb)
         tab.connect("delete", self._delete_tab_cb)
 
