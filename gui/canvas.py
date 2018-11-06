@@ -316,6 +316,7 @@ class Canvas(Gtk.DrawingArea):
         self.config.connect("file", self.set_file)
 
         self.pixelmap = PixelMap(*self.config.layout_size)
+        self.pixelmaps = [self.pixelmap]
         self.file = None
         self.modified = False
 
@@ -326,7 +327,7 @@ class Canvas(Gtk.DrawingArea):
         self._selected_pixels = []
         self._history = [self.pixelmap]
         self._current_layout_size = self.config.layout_size
-        self._waiting_for_realize = False
+        self._waiting_for_allocate = False
 
         self.set_vexpand(False)
         self.set_hexpand(False)
@@ -346,7 +347,7 @@ class Canvas(Gtk.DrawingArea):
             self.connect("button-release-event", self._button_release_cb)
 
         self.connect("draw", self._draw_cb)
-        self.connect("realize", self._realize_cb)
+        self.connect("size-allocate", self._size_allocate_cb)
 
     def _scroll_cb(self, canvas, event):
         if event.state != Gdk.ModifierType.CONTROL_MASK:
@@ -488,8 +489,9 @@ class Canvas(Gtk.DrawingArea):
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
-    def _realize_cb(self, canvas, *args):
-        if self._waiting_for_realize:
+    def _size_allocate_cb(self, canvas, alloc):
+        if self._waiting_for_allocate:
+            self._waiting_for_allocate = False
             self.resize()
 
     def redraw(self):
@@ -499,13 +501,15 @@ class Canvas(Gtk.DrawingArea):
         width, height = self.config.layout_size
 
         if not self.config.resizable:
-            if not self._waiting_for_realize:
-                self._waiting_for_realize = True
-                return
-
             alloc = self.get_allocation()
+
+            if not self._waiting_for_allocate:
+                self._waiting_for_allocate = True
+                return
+ 
             self.config._zoom = 100 * min(alloc.width / width, alloc.height / height)
             self.redraw()
+
             return
 
         width = width * self.config.zoom / 100
@@ -675,7 +679,7 @@ class Canvas(Gtk.DrawingArea):
 
     def set_pixelmap(self, pixelmap, refresh=True):
         self.pixelmap = pixelmap
-        self.pixelmaps = [self.pixelmap]
+        self.pixelmaps.append(self.pixelmap)
 
         if refresh:
             self.redraw()

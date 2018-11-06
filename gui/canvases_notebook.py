@@ -51,7 +51,7 @@ class CanvasNotebookTab(Gtk.Box):
         if TAB_CANVAS_CONFIG is None:
             TAB_CANVAS_CONFIG = CanvasConfig(
                 zoom=500,
-                layout_size=self._associated.canvas.config.layout_size,
+                layout_size=self._associated.config.layout_size,
                 resizable=False,
                 editable=False)
 
@@ -147,7 +147,7 @@ class CanvasesNotebook(Gtk.Notebook):
         self.canvases = {}
 
         self._realized = False
-        self._canvas_config = None
+        self._canvas_config = CanvasConfig()
 
         self.set_tab_pos(Gtk.PositionType.LEFT)
         self.set_scrollable(True)
@@ -165,6 +165,7 @@ class CanvasesNotebook(Gtk.Notebook):
 
     def _canvas_changed_cb(self, canvas):
         tab_canvas = self.canvases[canvas].get_canvas()
+        tab_canvas.gfewge = 1
         tab_canvas.set_pixelmap(canvas.get_pixelmap())
 
     def _canvas_size_changed_cb(self, canvas):
@@ -228,10 +229,7 @@ class CanvasesNotebook(Gtk.Notebook):
         canvas.connect("primary-color-picked", self._primary_color_picked_cb)
         canvas.connect("secondary-color-picked", self._secondary_color_picked_cb)
 
-        if self._canvas_config is None:
-            self._canvas_config = canvas.canvas.config
-
-        tab = CanvasNotebookTab(canvas)
+        tab = CanvasNotebookTab(canvas.canvas)
         tab.connect("copy", self._copy_tab_cb)
         tab.connect("delete", self._delete_tab_cb)
 
