@@ -55,7 +55,7 @@ class SpryteApp(Gtk.Application):
         # TODO: Crear menús
 
         settings = Gtk.Settings.get_default()
-        #settings.set_property("gtk-application-prefer-dark-theme", True)
+        settings.set_property("gtk-application-prefer-dark-theme", True)
 
         self._create_actions()
 
