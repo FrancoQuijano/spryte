@@ -278,11 +278,14 @@ class CanvasesNotebook(Gtk.Notebook):
         return self._canvas_config.file
 
     def set_file(self, file, refresh=True):
+        self._canvas_config.file = file
+        """
         if refresh:
             self._canvas_config.file = file
 
         else:
             self._canvas_config._file = file
+        """
 
     def get_pixelmaps(self):
         pixelmaps = []

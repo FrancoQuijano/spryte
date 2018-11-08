@@ -161,6 +161,7 @@ class CanvasConfig:
     DEFAULT_RESIZABLE = True
     DEFAULT_EDITABLE = True
     DEFAULT_FILE = None
+    DEFAULT_MODIFIED = False
 
     def __init__(self, layout_size=DEFAULT_LAYOUT_SIZE, tool=DEFAULT_TOOL,
                  tool_size=DEFAULT_TOOL_SIZE,
@@ -168,7 +169,7 @@ class CanvasConfig:
                  secondary_color=DEFAULT_SECONDARY_COLOR,
                  zoom=DEFAULT_ZOOM, show_grid=DEFAULT_SHOW_GRID,
                  resizable=DEFAULT_RESIZABLE, editable=DEFAULT_EDITABLE,
-                 file=DEFAULT_FILE):
+                 file=DEFAULT_FILE, modified=DEFAULT_MODIFIED):
 
         self._layout_size = layout_size
         self._tool = tool
@@ -180,6 +181,7 @@ class CanvasConfig:
         self._resizable = resizable
         self._editable = editable
         self._file = file
+        self._modified = modified
 
         self._callbacks = {}
 
@@ -292,6 +294,16 @@ class CanvasConfig:
         self._file = value
         self.emit("file")
 
+    @property
+    def modified(self):
+        return self._modified
+
+    @modified.setter
+    def modified(self, value):
+        if value != self._modified:
+            self._modified = value
+            self.emit("modified")
+
 
 class Canvas(Gtk.DrawingArea):
 
@@ -313,10 +325,9 @@ class Canvas(Gtk.DrawingArea):
 
         self.config.connect("layout-size", self.set_layout_size)
         self.config.connect("zoom", self._zoom_changed_cb)
-        self.config.connect("file", self.set_file)
+        self.config.connect("file", self._file_changed_cb)
 
         self.pixelmap = PixelMap(*self.config.layout_size)
-        self.file = None
         self.modified = False
 
         self._pending_tool = None
@@ -325,6 +336,7 @@ class Canvas(Gtk.DrawingArea):
         self._click_mouse_position = (None, None)
         self._selected_pixels = []
         self._history = [self.pixelmap]
+        self._last_saved_pixelmap = self.pixelmap
         self._current_layout_size = self.config.layout_size
         self._waiting_for_allocate = False
 
@@ -428,6 +440,7 @@ class Canvas(Gtk.DrawingArea):
 
         prev.delete_temp_pixels()
 
+        self.config.modified = True
         self.emit("changed")
 
     def _draw_cb(self, canvas, ctx):
@@ -531,6 +544,7 @@ class Canvas(Gtk.DrawingArea):
                 self.pixelmap.delete_pixel_at(x, y)
 
         self.set_sprite_size((new_width, new_height))
+        self.config.modified = True
         self.emit("size-changed")
 
     def set_sprite_size(self, size):
@@ -687,15 +701,23 @@ class Canvas(Gtk.DrawingArea):
         if refresh:
             self.redraw()
 
-    def set_file(self, filename):
-        self.file = filename
+    def _file_changed_cb(self, filename):
         image = Image.open(filename)
 
         self.config.layout_size = image.size
         self.pixelmap.load_data_from_image(image)
         self.resize()
 
+        self.config.modified = False
         self.emit("changed")
+
+    def set_file(self, file, refresh=True):
+        if refresh:
+            self.config.file = file
+
+        else:
+            self.config._file = file
+            self.config.modified = False
 
     def get_sprite_size(self):
         return self.config.layout_size
@@ -706,6 +728,7 @@ class Canvas(Gtk.DrawingArea):
             self.pixelmap = self._history[index - 1]
             self.redraw()
 
+            self.config.modified = self._history[-1] == self._last_saved_pixelmap
             self.emit("changed")
 
     def redo(self):
@@ -714,6 +737,7 @@ class Canvas(Gtk.DrawingArea):
             self.pixelmap = self._history[index + 1]
             self.redraw()
 
+            self.config.modified = self._history[-1] == self._last_saved_pixelmap
             self.emit("changed")
 
     def _get_useful_pixels_for_stroke(self):
@@ -990,6 +1014,9 @@ class CanvasContainer(Gtk.Box):
 
     def set_pixelmap(self, pixelmap, *args, **kargs):
         self.canvas.set_pixelmap(pixelmap, *args, **kargs)
+
+    def set_file(self, file, refresh=True):
+        self.canvas.set_file(file, refresh=refresh)
 
     def get_file(self):
         return self.canvas.get_file()
