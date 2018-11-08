@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .utils import Color
+from .utils import FileManagement
 from .canvas import Canvas
 from .canvas import CanvasConfig
 from .canvas import CanvasContainer
@@ -245,6 +246,12 @@ class CanvasesNotebook(Gtk.Notebook):
 
         return canvas
 
+    def append_page_with_pixelmap(self, pixelmap, reorder=True):
+        canvas = self.append_page(reorder)
+        canvas.set_pixelmap(pixelmap, reset=True)
+
+        return canvas
+
     def set_tool(self, tool):
         self._canvas_config.tool = tool
 
@@ -267,25 +274,27 @@ class CanvasesNotebook(Gtk.Notebook):
         return self.get_children()[self.get_current_page()]
 
     def open_file(self, file):
-        current_canvas = self.get_current_canvas()
+        pixelmaps = FileManagement.open(file)
+        canvases_dict = self.canvases.copy()
 
-        if current_canvas.modified:
+        canvases = []
+        for pixelmap in pixelmaps:
+            canvas = self.append_page_with_pixelmap(pixelmap)
+            self._canvas_changed_cb(canvas)
+            canvases.append(canvas)
+
+        for canvas in canvases_dict.keys():
+            if canvas not in canvases:
+                self._delete_tab_cb(canvases_dict[canvas])
+
+        if len(pixelmaps) > 1:
             self.append_page()
-
-        current_canvas.set_file(file)
 
     def get_file(self):
         return self._canvas_config.file
 
     def set_file(self, file, refresh=True):
         self._canvas_config.file = file
-        """
-        if refresh:
-            self._canvas_config.file = file
-
-        else:
-            self._canvas_config._file = file
-        """
 
     def get_pixelmaps(self):
         pixelmaps = []

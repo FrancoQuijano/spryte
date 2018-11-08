@@ -41,6 +41,14 @@ class PixelMap(object):
 
         return False
 
+    @classmethod
+    def new_from_image(self, image):
+        pixelmap = PixelMap()
+        pixelmap.width, pixelmap.height = image.width, image.height
+        pixelmap.load_data_from_image(image)
+
+        return pixelmap
+
     def get_pixel_at(self, x, y):
         for pixel in self.pixels:
             if pixel.x == x and pixel.y == y:
@@ -129,11 +137,11 @@ class PixelMap(object):
     def load_data_from_image(self, image):
         self.pixels = []
 
-        pixel_access = image.load()
+        image = image.convert("RGBA")
 
         for x in range(0, image.size[0]):
             for y in range(0, image.size[1]):
-                r, g, b, a = pixel_access[x, y]
+                r, g, b, a = image.getpixel((x, y))
 
                 if a == 0:
                     continue
@@ -147,6 +155,9 @@ class PixelMap(object):
         pixelmap.temp_pixels = self.temp_pixels.copy()
 
         return pixelmap
+
+    def is_empty(self):
+        return len(self.pixels) == 0
 
 
 class CanvasConfig:
@@ -328,7 +339,6 @@ class Canvas(Gtk.DrawingArea):
         self.config.connect("file", self._file_changed_cb)
 
         self.pixelmap = PixelMap(*self.config.layout_size)
-        self.modified = False
 
         self._pending_tool = None
         self._pressed_buttons = []
@@ -698,6 +708,8 @@ class Canvas(Gtk.DrawingArea):
         else:
             self._history.append(self.pixelmap)
 
+        self.config.modified = False
+
         if refresh:
             self.redraw()
 
@@ -705,7 +717,6 @@ class Canvas(Gtk.DrawingArea):
         image = Image.open(filename)
 
         self.config.layout_size = image.size
-        self.pixelmap.load_data_from_image(image)
         self.resize()
 
         self.config.modified = False
@@ -973,7 +984,6 @@ class CanvasContainer(Gtk.Box):
     def __init__(self, *args, **kargs):
         super(CanvasContainer, self).__init__()
 
-        self.modified = False
         self.set_border_width(5)
 
         self.scroll = Gtk.ScrolledWindow()

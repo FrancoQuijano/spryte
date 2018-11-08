@@ -157,106 +157,6 @@ class FileChooserManager:
         return file
 
 
-class FileManagement:
-
-    @classmethod
-    def pixelmap_to_svg(self, pixelmap):
-        pixel_size = 20  # FIXME: Hay que respetar el tamaño del layout
-
-        indent = "  "
-        output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)
-
-        for pixel in pixelmap.pixels:
-            color = Color.cairo_to_rgb(pixel.color)
-            x = (pixel.x - 1) * pixel_size
-            y = (pixel.y - 1) * pixel_size
-            output += '%s<rect x="%d" y="%d" width="%d" height="%d" ' \
-                      'style="fill:rgb(%d,%d,%d)" fill-opacity="%f" />\n' % (
-                        indent, x, y, pixel_size, pixel_size,
-                        *color, pixel.color[3])
-
-        output += "</svg>"
-        return output
-
-    @classmethod
-    def _save_as_svg(self, pixelmap, file):
-        output = FileManagement.pixelmap_to_svg(pixelmap)
-        with open(file, "w") as pfile:
-            pfile.write(output)
-
-    @classmethod
-    def pixelmap_to_png(self, pixelmap):
-        width, height = pixelmap.width, pixelmap.height
-        pixels = []
-
-        for y in range(0, height):
-            pixels.append([])
-
-        for x in range(0, width):
-            for y in range(0, height):
-                color = Color.cairo_to_rgba(pixelmap.get_pixel_color(x + 1, y + 1))
-                pixels[y].append(color)
-
-        array = numpy.array(pixels, dtype=numpy.uint8)
-        return Image.fromarray(array)
-
-    @classmethod
-    def _save_as_png(self, pixelmap, file):
-        image = FileManagement.pixelmap_to_png(pixelmap)
-        image.save(file)
-
-    @classmethod
-    def pixelmaps_to_pngs(self, pixelmaps):
-        return [FileManagement.pixelmap_to_png(pixelmap) for pixelmap in pixelmaps]
-
-    @classmethod
-    def _save_as_gif(self, pixelmaps, file):
-        frames = FileManagement.pixelmaps_to_pngs(pixelmaps)
-        primera = frames[0]
-        del frames[0]
-
-        loop = 0  # TODO
-        duration = 250  # TODO
-
-        primera.save(file, save_all=True, append_images=frames,
-                     duration=duration, loop=loop,
-                     transparency=0)
-
-    @classmethod
-    def save(self, pixelmaps, file):
-        # TODO: Agregar la opción de guardar (en los formatos individuales:
-        # png, svg, etc..) en una sola imagen, un frame al lado del otro
-
-        if file.endswith(".svg"):
-            if len(pixelmaps) == 1:
-                FileManagement._save_as_svg(pixelmaps[0], file)
-
-            else:
-                file = file[:-len(".svg")]
-
-                for i, pixelmap in enumerate(pixelmaps):
-                    _file = file + " %d.svg" % i
-                    FileManagement._save_as_svg(pixelmap, _file)
-
-        elif file.endswith(".png"):
-            if len(pixelmaps) == 1:
-                FileManagement._save_as_png(pixelmaps[0], file)
-
-            else:
-                file = file[:-len(".png")]
-
-                for i, pixelmap in enumerate(pixelmaps):
-                    _file = file + " %d.png" % i
-                    FileManagement._save_as_png(pixelmap, _file)
-
-        elif file.endswith(".gif"):
-            FileManagement._save_as_gif(pixelmaps, file)
-
-        else:
-            print("Actualmente el formato %s no está soportado, guardando como png..." % file.split(".")[-1])
-            FileManagement.save(pixelmaps, file + ".png")
-
-
 class PaintAlgorithms:
 
     @classmethod
@@ -367,4 +267,137 @@ def gtk_version_newer_than(major=3, minor=0, micro=0):
     return (_major > major) or \
            (_major == major and _minor > minor) or \
            (_major == major and _minor == minor and _micro >= micro)
+
+
+from .canvas import PixelMap
+
+
+class FileManagement:
+
+    @classmethod
+    def pixelmap_to_svg(self, pixelmap):
+        pixel_size = 20  # FIXME: Hay que respetar el tamaño del layout
+
+        indent = "  "
+        output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)
+
+        for pixel in pixelmap.pixels:
+            color = Color.cairo_to_rgb(pixel.color)
+            x = (pixel.x - 1) * pixel_size
+            y = (pixel.y - 1) * pixel_size
+            output += '%s<rect x="%d" y="%d" width="%d" height="%d" ' \
+                      'style="fill:rgb(%d,%d,%d)" fill-opacity="%f" />\n' % (
+                        indent, x, y, pixel_size, pixel_size,
+                        *color, pixel.color[3])
+
+        output += "</svg>"
+        return output
+
+    @classmethod
+    def _save_as_svg(self, pixelmap, file):
+        output = FileManagement.pixelmap_to_svg(pixelmap)
+        with open(file, "w") as pfile:
+            pfile.write(output)
+
+    @classmethod
+    def pixelmap_to_png(self, pixelmap):
+        width, height = pixelmap.width, pixelmap.height
+        pixels = []
+
+        for y in range(0, height):
+            pixels.append([])
+
+        for x in range(0, width):
+            for y in range(0, height):
+                color = Color.cairo_to_rgba(pixelmap.get_pixel_color(x + 1, y + 1))
+                pixels[y].append(color)
+
+        array = numpy.array(pixels, dtype=numpy.uint8)
+        return Image.fromarray(array)
+
+    @classmethod
+    def _save_as_png(self, pixelmap, file):
+        image = FileManagement.pixelmap_to_png(pixelmap)
+        image.save(file)
+
+    @classmethod
+    def pixelmaps_to_pngs(self, pixelmaps):
+        return [FileManagement.pixelmap_to_png(pixelmap) for pixelmap in pixelmaps]
+
+    @classmethod
+    def _save_as_gif(self, pixelmaps, file):
+        frames = FileManagement.pixelmaps_to_pngs(pixelmaps)
+        primera = frames[0]
+        del frames[0]
+
+        loop = 0  # TODO
+        duration = 250  # TODO
+
+        primera.save(file, save_all=True, append_images=frames,
+                     duration=duration, loop=loop,
+                     transparency=0)
+
+    @classmethod
+    def png_to_pixelmap(self, file):
+        image = Image.open(file)
+        image.load()
+        return PixelMap.new_from_image(image)
+
+    @classmethod
+    def png_to_pixelmaps(self, file):
+        return [FileManagement.png_to_pixelmap(file)]
+
+    @classmethod
+    def gif_to_pixelmaps(self, file):
+        pixelmaps = []
+
+        image = Image.open(file)
+        image.load()
+        for frame in ImageSequence.Iterator(image):
+            pixelmap = PixelMap.new_from_image(frame)
+            pixelmaps.append(pixelmap)
+
+        return pixelmaps
+
+    @classmethod
+    def save(self, pixelmaps, file):
+        # TODO: Agregar la opción de guardar (en los formatos individuales:
+        # png, svg, etc..) en una sola imagen, un frame al lado del otro
+
+        if file.endswith(".svg"):
+            if len(pixelmaps) == 1:
+                FileManagement._save_as_svg(pixelmaps[0], file)
+
+            else:
+                file = file[:-len(".svg")]
+
+                for i, pixelmap in enumerate(pixelmaps):
+                    _file = file + " %d.svg" % i
+                    FileManagement._save_as_svg(pixelmap, _file)
+
+        elif file.endswith(".png"):
+            if len(pixelmaps) == 1:
+                FileManagement._save_as_png(pixelmaps[0], file)
+
+            else:
+                file = file[:-len(".png")]
+
+                for i, pixelmap in enumerate(pixelmaps):
+                    _file = file + " %d.png" % i
+                    FileManagement._save_as_png(pixelmap, _file)
+
+        elif file.endswith(".gif"):
+            FileManagement._save_as_gif(pixelmaps, file)
+
+        else:
+            print("Actualmente el formato %s no está soportado, guardando como png..." % file.split(".")[-1])
+            FileManagement.save(pixelmaps, file + ".png")
+
+    @classmethod
+    def open(self, file):
+        if file.endswith(".gif"):
+            return FileManagement.gif_to_pixelmaps(file)
+
+        elif file.endswith(".png"):
+            return FileManagement.png_to_pixelmaps(file)
 
