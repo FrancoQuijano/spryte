@@ -124,6 +124,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
 
         self.files_notebook = FilesNotebook()
         self.files_notebook.append_page()
+        self.files_notebook.connect("save-before-closing", self._save_before_closing_cb)
         self.files_notebook.connect("primary-color-picked", self._primary_color_picked_cb)
         self.files_notebook.connect("secondary-color-picked", self._secondary_color_picked_cb)
         self.layout.pack_start(self.files_notebook, True, True, 0)
@@ -163,6 +164,12 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.tool_palette.set_secondary_color(color)
         self.get_current_cavases_notebook().set_secondary_color(color)
 
+    def _save_before_closing_cb(self, files_notebook, frames_notebook):
+        saved = self.save(frames_notebook._canvas_config.file)
+        if saved:
+            # En teoría, el force no es necesario
+            self.files_notebook.remove_page(frames_notebook, force=True)
+
     def new_file(self):
         print("TOOD: SpryteWindow.new_file")
 
@@ -182,8 +189,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
             file = self.get_current_cavases_notebook().get_file()
 
             if file is None:
-                self.save_as()
-                return
+                return self.save_as()
 
         pixelmaps = self.get_current_cavases_notebook().get_pixelmaps()
         FileManagement.save(pixelmaps, file)
@@ -191,10 +197,15 @@ class SpryteWindow(Gtk.ApplicationWindow):
         self.get_current_cavases_notebook().set_file(file, refresh=False)
         self.files_notebook.set_filename(os.path.basename(file))
 
+        return True
+
     def save_as(self):
         file = FileChooserManager.save(self)
         if file is not None:  # El usuario canceló la acción de guardar
             self.save(file)
+            return True
+
+        return False
 
     def undo(self):
         self.get_current_cavases_notebook().undo()

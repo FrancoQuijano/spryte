@@ -739,7 +739,7 @@ class Canvas(Gtk.DrawingArea):
             self.pixelmap = self._history[index - 1]
             self.redraw()
 
-            self.config.modified = self._history[-1] == self._last_saved_pixelmap
+            self.config.modified = self.pixelmap != self._last_saved_pixelmap
             self.emit("changed")
 
     def redo(self):
@@ -748,7 +748,7 @@ class Canvas(Gtk.DrawingArea):
             self.pixelmap = self._history[index + 1]
             self.redraw()
 
-            self.config.modified = self._history[-1] == self._last_saved_pixelmap
+            self.config.modified = self.pixelmap != self._last_saved_pixelmap
             self.emit("changed")
 
     def _get_useful_pixels_for_stroke(self):
