@@ -11,6 +11,7 @@ from PIL import ImageSequence
 
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GdkPixbuf
 
 
 class Color:
@@ -124,7 +125,13 @@ class FileChooserManager:
                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 
         dialog.set_select_multiple(True)
-        # self.add_filters(dialog)
+        dialog.set_preview_widget_active(False)
+
+        image = Gtk.Image()
+        image.set_margin_start(10)
+        image.set_margin_end(10)
+        dialog.set_preview_widget(image)
+        dialog.connect("update-preview", self.update_preview, image)
 
         response = dialog.run()
         files = []
@@ -146,6 +153,13 @@ class FileChooserManager:
                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 
         dialog.set_do_overwrite_confirmation(True)
+        dialog.set_preview_widget_active(False)
+
+        image = Gtk.Image()
+        image.set_margin_start(10)
+        image.set_margin_end(10)
+        dialog.set_preview_widget(image)
+        dialog.connect("update-preview", self.update_preview, image)
 
         response = dialog.run()
         file = None
@@ -155,6 +169,35 @@ class FileChooserManager:
 
         dialog.destroy()
         return file
+
+    def update_preview(dialog, image):
+        paths = dialog.get_filenames()
+
+        if len(paths) != 1:
+            dialog.set_preview_widget_active(False)
+            return
+
+        path = paths[0]
+        try:
+            # TODO: Debe haber una mejor manera de hacer esto
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
+        except:
+            dialog.set_preview_widget_active(False)
+            return
+
+        maxwidth, maxheight = 300, 700
+        width, height = pixbuf.get_width(), pixbuf.get_height()
+        scale = min(maxwidth / width, maxheight / height)
+
+        interp = GdkPixbuf.InterpType.NEAREST
+        if scale < 1:
+            interp = GdkPixbuf.InterpType.BILINEAR
+
+        width, height = int(width * scale), int(height * scale)
+        pixbuf = pixbuf.scale_simple(width, height, GdkPixbuf.InterpType.NEAREST)
+
+        image.set_from_pixbuf(pixbuf)
+        dialog.set_preview_widget_active(True)
 
 
 class PaintAlgorithms:
