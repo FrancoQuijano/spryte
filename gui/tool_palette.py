@@ -27,6 +27,9 @@ class Tool(object):
         if self.type == ToolType.PENCIL:
             return os.path.join(icons_dir, "pencil.svg")
 
+        elif self.type == ToolType.VERTICAL_MIRROR_PENCIL:
+            return os.path.join(icons_dir, "vertical-mirror-pencil.svg")
+
         return None
 
 
