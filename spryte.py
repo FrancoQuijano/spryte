@@ -32,10 +32,11 @@ class SpryteApp(Gtk.Application):
     def _create_actions(self):
         actions = [
             # File
-            ("new_file",  "app.new_file",  ["<Primary>N"], self.new_file),
-            ("open_file", "app.open_file", ["<Primary>O"], self.open),
-            ("save",      "app.save",      ["<Primary>S"], self.save),
-            ("save_as",   "app.save_as",   ["<Primary><Shift>S"], self.save_as),
+            ("new_file",   "app.new_file",   ["<Primary>N"], self.new_file),
+            ("open_file",  "app.open_file",  ["<Primary>O"], self.open),
+            ("save",       "app.save",       ["<Primary>S"], self.save),
+            ("save_as",    "app.save_as",    ["<Primary><Shift>S"], self.save_as),
+            ("close_file", "app.close_file", ["<Primary>W"], self.close_file),
 
             # Edit
             ("undo", "app.undo", ["<Primary>Z"], self.undo),
@@ -83,11 +84,11 @@ class SpryteApp(Gtk.Application):
     def save(self, action, param):
         self.get_current_window().save()
 
-    def save(self, action, param):
-        self.get_current_window().save()
-
     def save_as(self, action, param):
         self.get_current_window().save_as()
+
+    def close_file(self, action, param):
+        self.get_current_window().close_file()
 
     def undo(self, action, param):
         self.get_current_window().undo()
@@ -206,6 +207,10 @@ class SpryteWindow(Gtk.ApplicationWindow):
             return True
 
         return False
+
+    def close_file(self):
+        notebook = self.files_notebook.get_current_notebook()
+        self.files_notebook.remove_page(notebook)
 
     def undo(self):
         self.get_current_cavases_notebook().undo()
