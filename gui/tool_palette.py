@@ -72,10 +72,13 @@ class ToolPalette(Gtk.Grid):
         self._create_color_buttons()
 
     def _create_tools_buttons(self):
-        buttons = []
+        _button = None
 
         for tool in self.tools:
-            button = Gtk.RadioButton()
+            button = Gtk.RadioButton.new_from_widget(_button)
+
+            if _button is None:
+                _button = button
 
             if tool.icon is None:
                 # TODO: Sacar este if una vez estén todos los íconos
@@ -87,17 +90,13 @@ class ToolPalette(Gtk.Grid):
                 pixbuf = pixbuf.scale_simple(24, 24, GdkPixbuf.InterpType.NEAREST)
 
             image = Gtk.Image.new_from_pixbuf(pixbuf)
-
             button.set_image(image)
-            button.set_group(buttons)
-
             button.set_tooltip_text(tool.name)
             button.set_mode(False)
             button.connect("toggled", self._tool_changed, tool.type)
             self.attach(button, tool.position[0], tool.position[1], 1, 1)
 
             tool.button = button
-            buttons.append(button)
 
     def _create_color_buttons(self):
         self.primary_color_button = Gtk.ColorButton()
