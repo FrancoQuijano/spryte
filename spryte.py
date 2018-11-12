@@ -17,7 +17,6 @@ from gui import ToolPalette
 from gui import HeaderBar
 from gui import CanvasContainer
 from gui import Statusbar
-# from gui import CanvasesNotebook
 from gui import FilesNotebook
 from gui.utils import FileChooserManager
 from gui.utils import FileManagement
@@ -172,7 +171,7 @@ class SpryteWindow(Gtk.ApplicationWindow):
             self.files_notebook.remove_page(frames_notebook, force=True)
 
     def new_file(self):
-        print("TOOD: SpryteWindow.new_file")
+        self.files_notebook.append_page()
 
     def open(self):
         files = FileChooserManager.open(self)
