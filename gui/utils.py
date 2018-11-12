@@ -13,6 +13,8 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GdkPixbuf
 
+SPRYTE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 class Color:
 
@@ -68,8 +70,8 @@ class Color:
 
 
 class ToolType:
-    PEN = 0
-    VERTICAL_MIRROR_PEN = 1
+    PENCIL = 0
+    VERTICAL_MIRROR_PENCIL = 1
     BUCKET = 2
     SPECIAL_BUCKET = 3
     ERASER = 4
@@ -100,8 +102,8 @@ class ToolType:
     @classmethod
     def is_paint_tool(self, tool):
         return tool in [
-            self.PEN,
-            self.VERTICAL_MIRROR_PEN,
+            self.PENCIL,
+            self.VERTICAL_MIRROR_PENCIL,
             self.BUCKET,
             self.SPECIAL_BUCKET,
             self.RECTANGLE,
@@ -150,7 +152,7 @@ class FileChooserManager:
         dialog = Gtk.FileChooserDialog("Please choose a file", window,
                                        Gtk.FileChooserAction.SAVE,
                                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
 
         dialog.set_do_overwrite_confirmation(True)
         dialog.set_preview_widget_active(False)

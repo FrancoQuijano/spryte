@@ -163,7 +163,7 @@ class PixelMap(object):
 class CanvasConfig:
 
     DEFAULT_LAYOUT_SIZE = (16, 16)
-    DEFAULT_TOOL = ToolType.PEN
+    DEFAULT_TOOL = ToolType.PENCIL
     DEFAULT_TOOL_SIZE = 1
     DEFAULT_PRIMARY_COLOR = Color.BLACK
     DEFAULT_SECONDARY_COLOR = Color.WHITE
@@ -583,7 +583,7 @@ class Canvas(Gtk.DrawingArea):
             elif color == Color.SECONDARY:
                 cairo_color = self.config.secondary_color
 
-            if self.config.tool == ToolType.PEN:
+            if self.config.tool in [ToolType.PENCIL, ToolType.VERTICAL_MIRROR_PENCIL]:
                 self.pixelmap.set_temp_pixel_color(x, y, cairo_color)
                 self.redraw()
 
@@ -689,7 +689,7 @@ class Canvas(Gtk.DrawingArea):
                            (x + 1, y + 2),   # 14
                            (x + 2, y + 2)])  # 15
 
-        if self.config.tool == ToolType.VERTICAL_MIRROR_PEN:
+        if self.config.tool == ToolType.VERTICAL_MIRROR_PENCIL:
             for x, y in pixels:
                 mx = self.config.layout_size[0] - x + 1
                 if (mx, y) not in pixels:

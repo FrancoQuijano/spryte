@@ -1,23 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .utils import Color, ToolType
+import os
 
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
+from gi.repository import GdkPixbuf
+
+from .utils import Color, ToolType, SPRYTE_DIR
 
 
 class Tool(object):
 
-    def __init__(self, name="", icon=None, position=(0, 0),
-                 tool_type=ToolType.PEN):
+    def __init__(self, name, position, tool_type):
 
         self.name = name
-        self.icon = icon
         self.position = position
         self.type = tool_type
         self.button = None
+        self.icon = self._get_icon_path()
+
+    def _get_icon_path(self):
+        icons_dir = os.path.join(SPRYTE_DIR, "icons")
+
+        if self.type == ToolType.PENCIL:
+            return os.path.join(icons_dir, "pencil.svg")
+
+        return None
 
 
 class ToolPalette(Gtk.Grid):
@@ -34,41 +44,46 @@ class ToolPalette(Gtk.Grid):
         self.set_column_homogeneous(True)
 
         self.tools = [
-            Tool("Pen", icon="document-edit-symbolic", position=(0, 0), tool_type=ToolType.PEN),
-            Tool("Bucket",              position=(0, 1), tool_type=ToolType.BUCKET),
-            Tool("Eraser",              position=(0, 2), tool_type=ToolType.ERASER),
-            Tool("Rectangle",           position=(0, 3), tool_type=ToolType.RECTANGLE),
-            Tool("Move",                position=(0, 4), tool_type=ToolType.MOVE),
-            Tool("Rectangle selection", position=(0, 5), tool_type=ToolType.RECTANGLE),
-            Tool("Lighten",             position=(0, 6), tool_type=ToolType.LIGHTEN),
-            Tool("Color Picker",        position=(0, 7), tool_type=ToolType.COLOR_PICKER),
+            Tool("Pencil",              (0, 0), ToolType.PENCIL),
+            Tool("Bucket",              (0, 1), ToolType.BUCKET),
+            Tool("Eraser",              (0, 2), ToolType.ERASER),
+            Tool("Rectangle",           (0, 3), ToolType.RECTANGLE),
+            Tool("Move",                (0, 4), ToolType.MOVE),
+            Tool("Rectangle selection", (0, 5), ToolType.RECTANGLE),
+            Tool("Lighten",             (0, 6), ToolType.LIGHTEN),
+            Tool("Color Picker",        (0, 7), ToolType.COLOR_PICKER),
 
-            Tool("Vertical mirror pen", position=(1, 0), tool_type=ToolType.VERTICAL_MIRROR_PEN),
-            Tool("Replace color",       position=(1, 1), tool_type=ToolType.SPECIAL_BUCKET),
-            Tool("Stroke",              position=(1, 2), tool_type=ToolType.STROKE),
-            Tool("Circle",              position=(1, 3), tool_type=ToolType.CIRCLE),
-            Tool("Shape selection",     position=(1, 4), tool_type=ToolType.SHAPE_SELECTION),
-            Tool("Lasso selection",     position=(1, 5), tool_type=ToolType.LASSO_SELECTION),
-            Tool("Dithering",           position=(1, 6), tool_type=ToolType.DITHERING),
+            Tool("Vertical mirror pen", (1, 0), ToolType.VERTICAL_MIRROR_PENCIL),
+            Tool("Replace color",       (1, 1), ToolType.SPECIAL_BUCKET),
+            Tool("Stroke",              (1, 2), ToolType.STROKE),
+            Tool("Circle",              (1, 3), ToolType.CIRCLE),
+            Tool("Shape selection",     (1, 4), ToolType.SHAPE_SELECTION),
+            Tool("Lasso selection",     (1, 5), ToolType.LASSO_SELECTION),
+            Tool("Dithering",           (1, 6), ToolType.DITHERING),
         ]
 
         self._create_tools_buttons()
         self._create_color_buttons()
 
     def _create_tools_buttons(self):
-        _button = None
+        buttons = []
 
         for tool in self.tools:
+            button = Gtk.RadioButton()
+
             if tool.icon is None:
-                button = Gtk.RadioButton.new_with_label_from_widget(
-                    _button, "")  # tool.name)
+                # TODO: Sacar este if una vez estén todos los íconos
+                pixbuf = None
+                button.set_size_request(24, 24)
 
             else:
-                button = Gtk.RadioButton()
-                image = Gtk.Image.new_from_icon_name("document-edit-symbolic",
-                                                     Gtk.IconSize.BUTTON)
-                button.set_image(image)
-                button.set_group(_button)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(tool.icon)
+                pixbuf = pixbuf.scale_simple(24, 24, GdkPixbuf.InterpType.NEAREST)
+
+            image = Gtk.Image.new_from_pixbuf(pixbuf)
+
+            button.set_image(image)
+            button.set_group(buttons)
 
             button.set_tooltip_text(tool.name)
             button.set_mode(False)
@@ -76,7 +91,7 @@ class ToolPalette(Gtk.Grid):
             self.attach(button, tool.position[0], tool.position[1], 1, 1)
 
             tool.button = button
-            _button = button
+            buttons.append(button)
 
     def _create_color_buttons(self):
         self.primary_color_button = Gtk.ColorButton()
