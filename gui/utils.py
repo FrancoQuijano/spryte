@@ -324,14 +324,15 @@ class FileManagement:
 
         indent = "  "
         output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)
+        margin = 0.05
 
         for pixel in pixelmap.pixels:
             color = Color.cairo_to_rgb(pixel.color)
             x = (pixel.x - 1) * pixel_size
             y = (pixel.y - 1) * pixel_size
-            output += '%s<rect x="%d" y="%d" width="%d" height="%d" ' \
+            output += '%s<rect x="%f" y="%f" width="%f" height="%f" ' \
                       'style="fill:rgb(%d,%d,%d)" fill-opacity="%f" />\n' % (
-                        indent, x, y, pixel_size, pixel_size,
+                        indent, x - margin, y - margin, pixel_size + margin * 2, pixel_size + margin * 2,
                         *color, pixel.color[3])
 
         output += "</svg>"
