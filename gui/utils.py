@@ -15,7 +15,7 @@ from gi.repository import GdkPixbuf
 
 SPRYTE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SVG_PIXEL_SIZE = 20
-
+PixelMap = None
 
 class Color:
 
@@ -316,9 +316,6 @@ def gtk_version_newer_than(major=3, minor=0, micro=0):
            (_major == major and _minor == minor and _micro >= micro)
 
 
-# from .canvas import PixelMap
-
-
 class FileManagement:
 
     @classmethod
@@ -448,6 +445,9 @@ class FileManagement:
         elif file.endswith(".png"):
             return FileManagement.png_to_pixelmaps(file)
 
+        # elif file.endswith(".svg"):
+        #     return FileManagement.svg_to_pixelmaps(file)
+
     @classmethod
     def get_image_dimensions(self, filename):
         try:  # TODO: Debería haber una mejor manera de hacer esto
@@ -477,3 +477,7 @@ class FileManagement:
                         break
 
         return (width // SVG_PIXEL_SIZE, height // SVG_PIXEL_SIZE)
+
+
+from .canvas import PixelMap  # canvas.py importa utils.py, así que debo
+                              # importar canvas.py al final en utils.py
