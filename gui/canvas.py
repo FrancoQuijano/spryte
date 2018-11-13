@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from PIL import Image
 
-from .utils import Color, ToolType, PaintAlgorithms
+from .utils import Color, ToolType, PaintAlgorithms, FileManagement
 
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -714,9 +714,7 @@ class Canvas(Gtk.DrawingArea):
             self.redraw()
 
     def _file_changed_cb(self, filename):
-        image = Image.open(filename)
-
-        self.config.layout_size = image.size
+        self.config.layout_size = FileManagement.get_image_dimensions(filename)
         self.resize()
 
         self.config.modified = False

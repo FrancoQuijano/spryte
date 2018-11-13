@@ -14,6 +14,7 @@ from gi.repository import Gdk
 from gi.repository import GdkPixbuf
 
 SPRYTE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SVG_PIXEL_SIZE = 20
 
 
 class Color:
@@ -304,6 +305,7 @@ class PaintAlgorithms:
             for y in range(min(y0, y1), max(y0, y1) + 1):
                 pixelmap.set_temp_pixel_color(x0, y, color)
 
+
 def gtk_version_newer_than(major=3, minor=0, micro=0):
     _major = Gtk.get_major_version()
     _minor = Gtk.get_minor_version()
@@ -314,14 +316,14 @@ def gtk_version_newer_than(major=3, minor=0, micro=0):
            (_major == major and _minor == minor and _micro >= micro)
 
 
-from .canvas import PixelMap
+# from .canvas import PixelMap
 
 
 class FileManagement:
 
     @classmethod
     def pixelmap_to_svg(self, pixelmap):
-        pixel_size = 20  # FIXME: Hay que respetar el tamaño del layout
+        pixel_size = SVG_PIXEL_SIZE  # FIXME: Hay que respetar el tamaño del layout
 
         indent = "  "
         output = '<svg width="%d" height="%d">\n' % (pixelmap.width * pixel_size, pixelmap.height * pixel_size)
@@ -446,3 +448,32 @@ class FileManagement:
         elif file.endswith(".png"):
             return FileManagement.png_to_pixelmaps(file)
 
+    @classmethod
+    def get_image_dimensions(self, filename):
+        try:  # TODO: Debería haber una mejor manera de hacer esto
+            image = Image.open(filename)
+            return image.size
+        except OSError:
+            pass
+
+        # FIXME: Hay que crear un parser de imágenes SVG, lo siguiente no
+        #        funciona, por ejemplo, si width on está en la misma línea
+        #        en la que se habre la etiqueta svg
+        width = height = 1
+        we = he = False
+
+        if filename.endswith(".svg"):
+            with open(filename, "r") as pfile:
+                for line in pfile.read().splitlines():
+                    if "<svg" in line and "width" in line:
+                        width = int(line.split('width="')[1].split('"')[0])
+                        we = True
+
+                    if "<svg" in line and "height" in line:
+                        height = int(line.split('height="')[1].split('"')[0])
+                        he = True
+
+                    if he and we:
+                        break
+
+        return (width // SVG_PIXEL_SIZE, height // SVG_PIXEL_SIZE)
