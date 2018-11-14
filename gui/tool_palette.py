@@ -30,6 +30,9 @@ class Tool(object):
         elif self.type == ToolType.VERTICAL_MIRROR_PENCIL:
             return os.path.join(icons_dir, "vertical-mirror-pencil.svg")
 
+        elif self.type == ToolType.STROKE:
+            return os.path.join(icons_dir, "stroke.svg")
+
         elif self.type == ToolType.COLOR_PICKER:
             return os.path.join(icons_dir, "color-picker.svg")
 
