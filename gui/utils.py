@@ -87,6 +87,14 @@ class ToolType:
     COLOR_PICKER = 13
     DITHERING = 14
 
+    ICONS = {
+        PENCIL: os.path.join(SPRYTE_DIR, "icons", "pencil.svg"),
+        VERTICAL_MIRROR_PENCIL: os.path.join(SPRYTE_DIR, "icons", "vertical-mirror-pencil.svg"),
+        STROKE: os.path.join(SPRYTE_DIR, "icons", "stroke.svg"),
+        COLOR_PICKER: os.path.join(SPRYTE_DIR, "icons", "color-picker.svg"),
+        DITHERING: os.path.join(SPRYTE_DIR, "icons", "dithering.svg")
+    }
+
     @classmethod
     def is_resizable(self, tool):
         return tool not in [
