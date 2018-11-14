@@ -90,6 +90,7 @@ class ToolType:
     ICONS = {
         PENCIL: os.path.join(SPRYTE_DIR, "icons", "pencil.svg"),
         VERTICAL_MIRROR_PENCIL: os.path.join(SPRYTE_DIR, "icons", "vertical-mirror-pencil.svg"),
+        ERASER: os.path.join(SPRYTE_DIR, "icons", "eraser.svg"),
         STROKE: os.path.join(SPRYTE_DIR, "icons", "stroke.svg"),
         COLOR_PICKER: os.path.join(SPRYTE_DIR, "icons", "color-picker.svg"),
         DITHERING: os.path.join(SPRYTE_DIR, "icons", "dithering.svg")
