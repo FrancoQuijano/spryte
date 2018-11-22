@@ -611,6 +611,17 @@ class Canvas(Gtk.DrawingArea):
 
                     PaintAlgorithms.line(self.pixelmap, x0, y0, x1, y1, cairo_color)
 
+            elif self.config.tool == ToolType.DITHERING:
+                if (x + y) % 2 == 0:
+                    self.pixelmap.set_temp_pixel_color(x, y,
+                        self.config.primary_color if color == Color.PRIMARY else self.config.secondary_color)
+
+                else:
+                    self.pixelmap.set_temp_pixel_color(x, y,
+                        self.config.secondary_color if color == Color.PRIMARY else self.config.primary_color)
+
+                self.redraw()
+
         elif self.config.tool == ToolType.ERASER:
             self.pixelmap.set_temp_pixel_color(x, y, Color.TRANSPARENT)
             self.redraw()
