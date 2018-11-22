@@ -93,6 +93,7 @@ class ToolType:
         BUCKET: os.path.join(SPRYTE_DIR, "icons", "bucket.svg"),
         ERASER: os.path.join(SPRYTE_DIR, "icons", "eraser.svg"),
         STROKE: os.path.join(SPRYTE_DIR, "icons", "stroke.svg"),
+        LIGHTEN: os.path.join(SPRYTE_DIR, "icons", "lighten.svg"),
         COLOR_PICKER: os.path.join(SPRYTE_DIR, "icons", "color-picker.svg"),
         DITHERING: os.path.join(SPRYTE_DIR, "icons", "dithering.svg")
     }
