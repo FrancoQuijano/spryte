@@ -92,6 +92,7 @@ class ToolType:
         VERTICAL_MIRROR_PENCIL: os.path.join(SPRYTE_DIR, "icons", "vertical-mirror-pencil.svg"),
         BUCKET: os.path.join(SPRYTE_DIR, "icons", "bucket.svg"),
         ERASER: os.path.join(SPRYTE_DIR, "icons", "eraser.svg"),
+        RECTANGLE: os.path.join(SPRYTE_DIR, "icons", "rectangle.svg"),
         STROKE: os.path.join(SPRYTE_DIR, "icons", "stroke.svg"),
         LIGHTEN: os.path.join(SPRYTE_DIR, "icons", "lighten.svg"),
         COLOR_PICKER: os.path.join(SPRYTE_DIR, "icons", "color-picker.svg"),

@@ -44,7 +44,7 @@ class ToolPalette(Gtk.Grid):
             Tool("Eraser",              (0, 2), ToolType.ERASER),
             Tool("Rectangle",           (0, 3), ToolType.RECTANGLE),
             Tool("Move",                (0, 4), ToolType.MOVE),
-            Tool("Rectangle selection", (0, 5), ToolType.RECTANGLE),
+            Tool("Rectangle selection", (0, 5), ToolType.RECTANGLE_SELECTION),
             Tool("Lighten",             (0, 6), ToolType.LIGHTEN),
             Tool("Color Picker",        (0, 7), ToolType.COLOR_PICKER),
 
