@@ -190,6 +190,54 @@ class Eraser(Tool):
         return True
 
 
+class Rectangle(Tool):
+
+    def __init__(self):
+        Tool.__init__(self, "Rectangle", ToolType.RECTANGLE)
+
+    def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
+        _color = self._get_color(primary, secondary, color)
+
+        start = canvas.get_relative_coords(*canvas._click_mouse_position)
+        end = canvas.get_relative_coords(*canvas._mouse_position)
+
+        canvas.pixelmap.delete_temp_pixels()
+
+        if start[0] >= end[0] and start[1] >= end[1]:
+            resp = end
+            end = start
+            start = resp
+
+        elif start[0] > end[0] and start[1] <= end[1]:
+            resp1 = (end[0], start[1])
+            resp2 = (start[0], end[1])
+
+            start = resp1
+            end = resp2
+
+        elif start[0] < end[0] and start[1] >= end[1]:
+            resp1 = (start[0], end[1])
+            resp2 = (end[0], start[1])
+
+            start = resp1
+            end = resp2
+
+        temp_pixels = []
+
+        for x in range(start[0], end[0] + 1):
+            for y in range(start[1], end[1] + 1):
+                if x + 1 > start[0] + canvas.config.tool_size and \
+                   x - 1 < end[0] - canvas.config.tool_size and \
+                   y + 1 > start[1] + canvas.config.tool_size and \
+                   y - 1 < end[1] - canvas.config.tool_size:
+
+                   continue
+
+                canvas.pixelmap.set_temp_pixel_color(x, y, _color)
+
+        return True
+
+
 class Stroke(Tool):
 
     def __init__(self):
@@ -537,7 +585,7 @@ TOOLS = {
     ToolType.BUCKET: Bucket(),
     ToolType.SPECIAL_BUCKET: SpecialBucket(),
     ToolType.ERASER: Eraser(),
-    # ToolType.RECTANGLE: (),
+    ToolType.RECTANGLE: Rectangle(),
     ToolType.STROKE: Stroke(),
     # ToolType.MOVE: (),
     # ToolType.CIRCLE: (),
