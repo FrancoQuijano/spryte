@@ -583,69 +583,22 @@ class Canvas(Gtk.DrawingArea):
                 self.redraw()
 
     def get_selected_pixels(self, start=None):
+        tool = TOOLS.get(self.config.tool, None)
+
+        if tool is not None:
+            pass
+
         if start is None:
             x, y = self.get_relative_coords(*self._mouse_position)
 
         else:
             x, y = self.get_relative_coords(*start)
 
-        pixels = [(x, y)]
+        tool = TOOLS.get(self.config.tool, None)
+        if tool is not None:
+            return tool.get_selected_pixels(self, x, y)
 
-        if not ToolType.is_resizable(self.config.tool):
-            return pixels
-
-        if self.config.tool_size >= 2:
-            # La X es donde está el mouse
-            # ---------
-            # | X | 1 |
-            # |---|---|
-            # | 3 | 2 |
-            # ---------
-            pixels.extend([(x + 1, y),      # 1
-                           (x + 1, y + 1),  # 2
-                           (x, y + 1)])     # 3
-
-        if self.config.tool_size >= 3:
-            # La X es donde está el mouse
-            # -------------
-            # | 4 | 5 | 6 |
-            # |---|---|---|
-            # | 7 | X | 1 |
-            # |---|---|---|
-            # | 8 | 2 | 3 |
-            # .............
-            pixels.extend([(x - 1, y - 1),   # 4
-                           (x, y - 1),       # 5
-                           (x + 1, y - 1),   # 6
-                           (x - 1, y),       # 7
-                           (x - 1, y + 1)])  # 8
-
-        if self.config.tool_size == 4:
-            # La X es donde está el mouse
-            # -----------------
-            # | 4 | 5 | 6 | 9 |
-            # |---|---|---|---|
-            # | 7 | X | 1 | 10|
-            # |---|---|---|---|
-            # | 8 | 2 | 3 | 11|
-            # |---|---|---|---|
-            # | 12| 13| 14| 15|
-            # -----------------
-            pixels.extend([(x + 2, y - 1),   # 9
-                           (x + 2, y),       # 10
-                           (x + 2, y + 1),   # 11
-                           (x - 1, y + 2),   # 12
-                           (x, y + 2),       # 13
-                           (x + 1, y + 2),   # 14
-                           (x + 2, y + 2)])  # 15
-
-        if self.config.tool == ToolType.VERTICAL_MIRROR_PENCIL:
-            for x, y in pixels:
-                mx = self.config.layout_size[0] - x + 1
-                if (mx, y) not in pixels:
-                    pixels.append((mx, y))
-
-        return pixels
+        return [(x, y)]
 
     def get_pixelmap(self):
         return self.pixelmap
