@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-
 import os
 import numpy
 
@@ -16,6 +14,7 @@ from gi.repository import GdkPixbuf
 SPRYTE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SVG_PIXEL_SIZE = 20
 PixelMap = None
+
 
 class Color:
 

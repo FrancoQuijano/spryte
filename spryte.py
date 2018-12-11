@@ -12,14 +12,14 @@ gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gio
 from gi.repository import Gtk
 
-import gui
-from gui import ToolPalette
-from gui import HeaderBar
-from gui import CanvasContainer
-from gui import Statusbar
-from gui import FilesNotebook
-from gui.utils import FileChooserManager
-from gui.utils import FileManagement
+import src
+from src import ToolPalette
+from src import HeaderBar
+from src import CanvasContainer
+from src import Statusbar
+from src import FilesNotebook
+from src.utils import FileChooserManager
+from src.utils import FileManagement
 
 
 class SpryteApp(Gtk.Application):
