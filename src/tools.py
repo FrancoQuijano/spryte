@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from .utils import ToolType, Color
@@ -201,8 +201,6 @@ class Rectangle(Tool):
         start = canvas.get_relative_coords(*canvas._click_mouse_position)
         end = canvas.get_relative_coords(*canvas._mouse_position)
 
-        canvas.pixelmap.delete_temp_pixels()
-
         if start[0] >= end[0] and start[1] >= end[1]:
             resp = end
             end = start
@@ -246,7 +244,7 @@ class Stroke(Tool):
     def _get_useful_pixels(self, canvas):
         """
         Devuelve la mínima cantidad de píxeles necesarios
-        para aplicar la herramienta stroke (cuando self.config.tool_size
+        para aplicar la herramienta stroke (cuando canvas.config.tool_size
         es igual a 3 o 4, para un tool_size de 1 o 2 no es necesaria la
         optimización). Aún así, esta optimización parece no ser suficiente.
         """

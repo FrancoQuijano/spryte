@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from __future__ import division
@@ -397,7 +397,7 @@ class Canvas(Gtk.DrawingArea):
             self.redraw()
             return
 
-        if self.config.tool in [ToolType.STROKE]:
+        if self.config.tool in [ToolType.STROKE, ToolType.RECTANGLE]:
             self.pixelmap.delete_temp_pixels()
 
         self._selected_pixels = selected_pixels
