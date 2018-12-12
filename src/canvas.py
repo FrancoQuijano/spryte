@@ -583,11 +583,6 @@ class Canvas(Gtk.DrawingArea):
                 self.redraw()
 
     def get_selected_pixels(self, start=None):
-        tool = TOOLS.get(self.config.tool, None)
-
-        if tool is not None:
-            pass
-
         if start is None:
             x, y = self.get_relative_coords(*self._mouse_position)
 

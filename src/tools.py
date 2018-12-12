@@ -229,7 +229,7 @@ class Rectangle(Tool):
                    y + 1 > start[1] + canvas.config.tool_size and \
                    y - 1 < end[1] - canvas.config.tool_size:
 
-                   continue
+                    continue
 
                 canvas.pixelmap.set_temp_pixel_color(x, y, _color)
 
@@ -543,6 +543,24 @@ class Stroke(Tool):
         return True
 
 
+class Lighten(Tool):
+
+    def __init__(self):
+        Tool.__init__(self, "Color picker", ToolType.LIGHTEN)
+
+    def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
+        for x, y in coords:
+            current_color = canvas.pixelmap.get_temp_pixel_color(x, y)
+            if current_color == Color.TRANSPARENT:
+                current_color = canvas.pixelmap.get_pixel_color(x, y)
+
+            if current_color[-1] == 0:  # Si sigue siendo transparente
+                continue
+
+            new_color = tuple(value + 0.08 for value in current_color)
+            canvas.pixelmap.set_temp_pixel_color(x, y, new_color)
+
+
 class ColorPicker(Tool):
 
     def __init__(self):
@@ -589,7 +607,7 @@ TOOLS = {
     # ToolType.CIRCLE: (),
     # ToolType.RECTANGLE_SELECTION: (),
     # ToolType.SHAPE_SELECTION: (),
-    # ToolType.LIGHTEN: (),
+    ToolType.LIGHTEN: Lighten(),
     # ToolType.LASSO_SELECTION: (),
     ToolType.COLOR_PICKER: ColorPicker(),
     ToolType.DITHERING: Dithering(),
