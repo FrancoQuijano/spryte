@@ -546,7 +546,7 @@ class Stroke(Tool):
 class Lighten(Tool):
 
     def __init__(self):
-        Tool.__init__(self, "Color picker", ToolType.LIGHTEN)
+        Tool.__init__(self, "Lighten", ToolType.LIGHTEN)
 
     def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
         for x, y in coords:
