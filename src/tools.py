@@ -26,7 +26,7 @@ class Tool(object):
     def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
         pass
 
-    def get_selected_pixels(self, canvas, x, y):
+    def get_hovered_pixels(self, canvas, x, y):
         pixels = [(x, y)]
 
         if not ToolType.is_resizable(self.type):
@@ -101,8 +101,8 @@ class VerticalMirrorPencil(Tool):
     def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
         return Pencil.apply(self, canvas, coords, color, primary, secondary)
 
-    def get_selected_pixels(self, canvas, x, y):
-        pixels = super().get_selected_pixels(canvas, x, y)
+    def get_hovered_pixels(self, canvas, x, y):
+        pixels = super().get_hovered_pixels(canvas, x, y)
 
         for x, y in pixels:
             mx = canvas.config.layout_size[0] - x + 1
@@ -143,7 +143,7 @@ class Bucket(Tool):
         _color = self._get_color(primary, secondary, color)
 
         for coord in coords:
-            current_pixel = canvas._selected_pixels[0]
+            current_pixel = canvas._hovered_pixels[0]
             current_color = canvas.pixelmap.get_pixel_color(*current_pixel)
             canvas.pixelmap.set_temp_pixel_color(coord[x], coord[y], _color)
             self._flood_fill(canvas.pixelmap, coord[x], coord[y], current_color, _color)
@@ -157,7 +157,7 @@ class SpecialBucket(Tool):
         Tool.__init__(self, "Special bucket", ToolType.SPECIAL_BUCKET)
 
     def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
-        current_pixel = canvas._selected_pixels[0]
+        current_pixel = canvas._hovered_pixels[0]
         current_color = canvas.pixelmap.get_pixel_color(*current_pixel)
         new_color = self._get_color(primary, secondary, color)
 
@@ -269,8 +269,8 @@ class Stroke(Tool):
 
         if canvas.config.tool_size <= 2:
             # Si es de 1x1 o 2x2 no hay gran pérdida de rendimiento
-            start_points = canvas.get_selected_pixels(canvas._click_mouse_position)
-            end_points = canvas.get_selected_pixels(canvas._mouse_position)
+            start_points = canvas.get_hovered_pixels(canvas._click_mouse_position)
+            end_points = canvas.get_hovered_pixels(canvas._mouse_position)
 
         elif canvas.config.tool_size == 3:
             if x1 > x2 and y1 > y2:
@@ -543,6 +543,18 @@ class Stroke(Tool):
         return True
 
 
+class ShapeSelection(Tool):
+
+    def __init__(self):
+        Tool.__init__(self, "Shape selection", ToolType.LIGHTEN)
+
+    def apply(self, canvas, coords, color=Color.PRIMARY, primary=None, secondary=None):
+        for x, y in coords:
+            canvas.select_pixel(x, y)
+
+        return True
+
+
 class Lighten(Tool):
 
     def __init__(self):
@@ -606,7 +618,7 @@ TOOLS = {
     # ToolType.MOVE: (),
     # ToolType.CIRCLE: (),
     # ToolType.RECTANGLE_SELECTION: (),
-    # ToolType.SHAPE_SELECTION: (),
+    ToolType.SHAPE_SELECTION: ShapeSelection(),
     ToolType.LIGHTEN: Lighten(),
     # ToolType.LASSO_SELECTION: (),
     ToolType.COLOR_PICKER: ColorPicker(),

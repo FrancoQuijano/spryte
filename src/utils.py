@@ -30,6 +30,8 @@ class Color:
     WHITE = (1, 1, 1, 1)
     TRANSPARENT = (0, 0, 0, 0)
 
+    SELECTED_PIXEL = (0.31, 0.76, 1, 0.45)
+
     @classmethod
     def gdk_to_cairo(self, color, alpha=65535):
         return (color.red / 65535,

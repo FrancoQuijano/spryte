@@ -345,6 +345,7 @@ class Canvas(Gtk.DrawingArea):
         self._pressed_buttons = []
         self._mouse_position = (-1, -1)
         self._click_mouse_position = (None, None)
+        self._hovered_pixels = []
         self._selected_pixels = []
         self._history = [self.pixelmap]
         self._last_saved_pixelmap = self.pixelmap
@@ -392,21 +393,21 @@ class Canvas(Gtk.DrawingArea):
     def _button_motion_cb(self, canvas, event):
         self._mouse_position = (event.x, event.y)
 
-        selected_pixels = self.get_selected_pixels()
-        if selected_pixels == self._selected_pixels:
+        hovered_pixels = self.get_hovered_pixels()
+        if hovered_pixels == self._hovered_pixels:
             self.redraw()
             return
 
         if self.config.tool in [ToolType.STROKE, ToolType.RECTANGLE]:
             self.pixelmap.delete_temp_pixels()
 
-        self._selected_pixels = selected_pixels
+        self._hovered_pixels = hovered_pixels
 
         if Gdk.BUTTON_PRIMARY in self._pressed_buttons:
-            self.apply_tool_to_selected_pixels(color=Color.PRIMARY)
+            self.apply_tool_to_hovered_pixels(color=Color.PRIMARY)
 
         elif Gdk.BUTTON_SECONDARY in self._pressed_buttons:
-            self.apply_tool_to_selected_pixels(color=Color.SECONDARY)
+            self.apply_tool_to_hovered_pixels(color=Color.SECONDARY)
 
         self.redraw()
 
@@ -417,14 +418,18 @@ class Canvas(Gtk.DrawingArea):
 
         self._click_mouse_position = (event.x, event.y)
 
+        # TODO: Si la tecla Ctrl está apretada, no deseleccionar pixeles
+        # anteriormente seleccionados
+        self.unselect_all_pixels()
+
         if button not in self._pressed_buttons:
             self._pressed_buttons.append(button)
 
         if button == Gdk.BUTTON_PRIMARY:
-            self.apply_tool_to_selected_pixels(color=Color.PRIMARY)
+            self.apply_tool_to_hovered_pixels(color=Color.PRIMARY)
 
         elif button == Gdk.BUTTON_SECONDARY:
-            self.apply_tool_to_selected_pixels(color=Color.SECONDARY)
+            self.apply_tool_to_hovered_pixels(color=Color.SECONDARY)
 
     def _button_release_cb(self, canvas, event):
         button = event.get_button()[1]
@@ -481,6 +486,7 @@ class Canvas(Gtk.DrawingArea):
             ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
             ctx.fill()
 
+        self._draw_hovered_pixels(ctx)
         self._draw_selected_pixels(ctx)
 
     def _draw_bg(self, ctx):
@@ -502,8 +508,18 @@ class Canvas(Gtk.DrawingArea):
                 ctx.rectangle(i * size, j * size, size, size)
                 ctx.fill()
 
-    def _draw_selected_pixels(self, ctx):
+    def _draw_hovered_pixels(self, ctx):
         ctx.set_source_rgba(1, 1, 1, 0.2)
+
+        for x, y in self._hovered_pixels:
+            x, y = self.get_absolute_coords(x, y)
+            w = h = self.config.zoom / 100
+            margin = 1 if self.config.zoom >= 100 else 0
+            ctx.rectangle(x + margin, y + margin, w - 2 * margin, h - 2 * margin)
+            ctx.fill()
+
+    def _draw_selected_pixels(self, ctx):
+        ctx.set_source_rgba(*Color.SELECTED_PIXEL)
 
         for x, y in self._selected_pixels:
             x, y = self.get_absolute_coords(x, y)
@@ -574,15 +590,15 @@ class Canvas(Gtk.DrawingArea):
         factor = self.config.zoom / 100
         return factor * (x - 1), factor * (y - 1)
 
-    def apply_tool_to_selected_pixels(self, color=Color.PRIMARY):
+    def apply_tool_to_hovered_pixels(self, color=Color.PRIMARY):
         tool = TOOLS.get(self.config.tool, None)
 
         if tool is not None:
-            redraw = tool.apply(self, self._selected_pixels, color, self.config.primary_color, self.config.secondary_color)
+            redraw = tool.apply(self, self._hovered_pixels, color, self.config.primary_color, self.config.secondary_color)
             if redraw:
                 self.redraw()
 
-    def get_selected_pixels(self, start=None):
+    def get_hovered_pixels(self, start=None):
         if start is None:
             x, y = self.get_relative_coords(*self._mouse_position)
 
@@ -591,7 +607,7 @@ class Canvas(Gtk.DrawingArea):
 
         tool = TOOLS.get(self.config.tool, None)
         if tool is not None:
-            return tool.get_selected_pixels(self, x, y)
+            return tool.get_hovered_pixels(self, x, y)
 
         return [(x, y)]
 
@@ -646,6 +662,20 @@ class Canvas(Gtk.DrawingArea):
 
             self.config.modified = self.pixelmap != self._last_saved_pixelmap
             self.emit("changed")
+
+    def select_pixel(self, x, y):
+        coord = (x, y)
+        if not coord in self._selected_pixels:
+            self._selected_pixels.append(coord)
+
+    def unselect_pixel(self, x, y):
+        coord = (x, y)
+        if coord in self._selected_pixels:
+            self._selected_pixels.remove(coord)
+
+    def unselect_all_pixels(self):
+        while len(self._selected_pixels) > 0:
+            self.unselect_pixel(*self._selected_pixels[0])
 
 
 class CanvasContainer(Gtk.Box):
